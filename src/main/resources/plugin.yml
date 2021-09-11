@@ -1,0 +1,19 @@
+name: KvadratUtils
+version: '${project.version}'
+main: com.danikvitek.kvadratutils.Main
+api-version: 1.16
+authors: [ Danik_Vitek ]
+description: Модерация серверов Квадратного
+
+commands:
+  command_blocks:
+    aliases:
+      - cb
+    description: Открывает меню контроля за командными блоками
+    usage: "/command_blocks, /cb"
+
+permissions:
+  kvadratutils.moderator:
+    default: op
+  kvadratutils.f3n_f3f4:
+    default: true
