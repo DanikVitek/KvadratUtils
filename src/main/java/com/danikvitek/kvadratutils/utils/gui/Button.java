@@ -3,6 +3,7 @@ package com.danikvitek.kvadratutils.utils.gui;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -15,7 +16,7 @@ public abstract class Button extends ItemStack {
      * @param material button's ItemStack type
      */
     public Button(Material material) {
-        super(material);
+        super(material != null ? material : Material.AIR);
     }
 
     /**
@@ -23,7 +24,7 @@ public abstract class Button extends ItemStack {
      * @param item button's ItemStack
      */
     public Button(ItemStack item) {
-        super(item);
+        super(item != null ? item : new ItemStack(Material.AIR));
     }
 
     /**

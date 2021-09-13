@@ -28,7 +28,7 @@ public class Menu {
         buttons.forEach(inventory::setItem);
     }
 
-    protected void open(Player player) {
+    public void open(Player player) {
         loadButtons();
         player.openInventory(inventory);
     }

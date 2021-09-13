@@ -46,10 +46,11 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 Inventory managerInventory = Bukkit.createInventory(null, 27, "Савн сущностей");
                 Menu managerMenu = new Menu(managerInventory);
                 pages.put(player, (byte) 0);
-                setIcons(managerMenu, (byte) 0);
+                redrawMenu(player, managerMenu);
+                /*setIcons(managerMenu, (byte) 0);
                 setToggleControls(managerMenu, (byte) 0);
                 setPageControls(managerMenu, player);
-                Main.getMenuHandler().openMenu(player, managerMenu);
+                Main.getMenuHandler().openMenu(player, managerMenu);*/
             }
             else
                 player.sendMessage(ChatColor.RED + "Нет прав на использование команды");
@@ -64,11 +65,8 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                pages.put(player, (byte) ((pages.get(player) - 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
-                setIcons(menu, pages.get(player));
-                setToggleControls(menu, pages.get(player));
-                setPageControls(menu, player);
-                Main.getMenuHandler().openMenu((Player) event.getWhoClicked(), menu);
+                pages.put(player, (byte) (pages.get(player) == 0 ? (byte) Math.ceil((double) entity_spawn.length / 9d) - 1 : (byte) (pages.get(player) - 1) % (byte) Math.ceil((double) entity_spawn.length / 9d)));
+                redrawMenu(player, managerMenu);
             }
         });
         managerMenu.setButton(26, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -76,10 +74,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
                 pages.put(player, (byte) ((pages.get(player) + 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
-                setIcons(menu, pages.get(player));
-                setToggleControls(menu, pages.get(player));
-                setPageControls(menu, player);
-                Main.getMenuHandler().openMenu((Player) event.getWhoClicked(), managerMenu);
+                redrawMenu(player, managerMenu);
             }
         });
         managerMenu.setButton(22, new Button(ControlButtons.QUIT.getItemStack()) {
@@ -90,6 +85,14 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 Main.getMenuHandler().closeMenu(player);
             }
         });
+    }
+
+    private void redrawMenu(Player player, Menu managerMenu) {
+        setIcons(managerMenu, pages.get(player));
+        setToggleControls(managerMenu, pages.get(player));
+        setPageControls(managerMenu, player);
+        Main.getMenuHandler().closeMenu(player);
+        Main.getMenuHandler().openMenu(player, managerMenu);
     }
 
     private void setToggleControls(Menu managerMenu, byte page) {
@@ -126,20 +129,20 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 break;
             }
         }
-        for (int i = 0; i < toggleControls.size(); i++) {
+        for (int i = 0; i < 9; i++) {
             final int _i = i;
-            managerMenu.setButton(i + 9, new Button(toggleControls.get(_i)) {
+            managerMenu.setButton(i + 9, new Button(i < toggleControls.size() ? toggleControls.get(i) : null) {
                 @Override
                 public void onClick(Menu menu, InventoryClickEvent event) {
                     event.setCancelled(true);
-                    entity_spawn[_i] = !entity_spawn[_i];
-                    Main.getModifyEntityManagerFile().set(keys.get(_i), !entity_spawn[_i]);
+                    entity_spawn[_i + page * 9] = !entity_spawn[_i + page * 9];
+                    Main.getModifyEntityManagerFile().set(keys.get(_i + page * 9), entity_spawn[_i + page * 9]);
                     try {
                         Main.getModifyEntityManagerFile().save(Main.getEntityManagerFile());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    Main.getMenuHandler().openMenu((Player) event.getWhoClicked(), menu);
+                    redrawMenu((Player) event.getWhoClicked(), managerMenu);
                 }
             });
         }
@@ -205,7 +208,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             (!entity_spawn[4] && entity instanceof FallingBlock && (((FallingBlock) entity).getBlockData().getMaterial() == Material.ANVIL || ((FallingBlock) entity).getBlockData().getMaterial() == Material.CHIPPED_ANVIL || ((FallingBlock) entity).getBlockData().getMaterial() == Material.DAMAGED_ANVIL)) ||
             (!entity_spawn[5] && entity instanceof Trident) ||
             (!entity_spawn[6] && entity instanceof Firework) ||
-            (!entity_spawn[7] && entity instanceof Creature && !(entity instanceof Monster)) ||
+            (!entity_spawn[7] && ((entity instanceof Creature && !(entity instanceof Monster)) || entity instanceof Ambient)) ||
             (!entity_spawn[8] && entity instanceof Monster) ||
             (!entity_spawn[9] && entity instanceof RideableMinecart) || // !(entity instanceof StorageMinecart || entity instanceof PoweredMinecart || entity instanceof HopperMinecart || entity instanceof ExplosiveMinecart || entity instanceof CommandMinecart || entity instanceof SpawnerMinecart)
             (!entity_spawn[10] && entity instanceof StorageMinecart) ||
