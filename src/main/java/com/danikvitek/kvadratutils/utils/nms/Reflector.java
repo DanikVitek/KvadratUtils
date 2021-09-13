@@ -1,6 +1,13 @@
 package com.danikvitek.kvadratutils.utils.nms;
 
+//import net.minecraft.server.v1_16_R3.*;
+import org.bukkit.block.Block;
+//import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
+//import org.bukkit.craftbukkit.v1_16_R3.block.CraftCommandBlock;
+//import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+
+import java.util.Objects;
 
 public class Reflector {
     private static final byte STATUS_BYTE = 28; // status byte of OP lever 4
@@ -30,6 +37,10 @@ public class Reflector {
     // "b"
     protected String playerConnectionField;
 
+//    protected Class<?> craftCommandBlock;
+//
+//    protected Class<?> ;
+
     public Reflector() {}
 
     public void sendPseudoOPStatus(Player player) {
@@ -42,4 +53,19 @@ public class Reflector {
             throw new RuntimeException("Ошибка во время отправки статуса сущности 28", e);
         }
     }
+
+//    public void sendOpenCBGUI(Player player, Block commandBlock) {
+//        ((BlockCommand) ((CraftCommandBlock) commandBlock).getHandle().getBlock()).interact(
+//                ((CraftCommandBlock) commandBlock).getHandle(),
+//                ((CraftWorld) Objects.requireNonNull(commandBlock.getLocation().getWorld())).getHandle(),
+//                new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
+//                ((CraftPlayer) player).getHandle(),
+//                EnumHand.MAIN_HAND,
+//                MovingObjectPositionBlock.a(
+//                        new Vec3D(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
+//                        EnumDirection.UP,
+//                        new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ())
+//                )
+//        );
+//    }
 }

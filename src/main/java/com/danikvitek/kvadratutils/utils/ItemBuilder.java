@@ -6,7 +6,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.material.Colorable;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
 
@@ -15,13 +15,40 @@ public class ItemBuilder {
     private final ItemMeta itemMeta;
 
     /**
-     * The constructor method.
+     * Material-based constructor
      * @param material the material of the item you are building.
      * @param amount   the amount of items in the item you are building.
      */
     public ItemBuilder(Material material, int amount) {
         this.itemStack = new ItemStack(material, amount);
         this.itemMeta = this.itemStack.getItemMeta();
+    }
+
+    /**
+     * Material-based constructor
+     * @param material the material of the item you are building.
+     */
+    public ItemBuilder(Material material) {
+        this(material, 1);
+    }
+
+    /**
+     * ItemStack-based constructor
+     * @param itemStack old ItemStack
+     * @param amount    new amount of items in the ItemStack
+     */
+    public ItemBuilder(ItemStack itemStack, int amount) {
+        this.itemStack = itemStack;
+        this.itemStack.setAmount(amount);
+        this.itemMeta = this.itemStack.getItemMeta();
+    }
+
+    /**
+     * ItemStack-based constructor
+     * @param itemStack old ItemStack
+     */
+    public ItemBuilder(ItemStack itemStack) {
+        this(itemStack, itemStack.getAmount());
     }
 
     private void updateItemMeta() {
@@ -92,6 +119,18 @@ public class ItemBuilder {
             this.itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
         else
             this.itemMeta.removeItemFlags(ItemFlag.HIDE_DYE);
+        return this;
+    }
+
+    /**
+     * Sets the owner of the skull
+     * Does nothing if the ItemStack is not a skull
+     * @param owner skull owner
+     * @return the ItemBuilder
+     */
+    public ItemBuilder setOwner(String owner) {
+        if (this.itemMeta instanceof SkullMeta)
+            ((SkullMeta) this.itemMeta).setOwner(owner);
         return this;
     }
 

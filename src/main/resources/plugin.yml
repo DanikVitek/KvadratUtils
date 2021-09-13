@@ -11,6 +11,13 @@ commands:
       - cb
     description: Открывает меню контроля за командными блоками
     usage: "/command_blocks, /cb"
+  manage_entities:
+    aliases:
+      - entities
+      - manager
+      - entity_manager
+    description: Открывает меню управления сущьностями
+    usage: "/manage_entities, /entity_manager, /entities, /manager"
 
 permissions:
   kvadratutils.moderator:

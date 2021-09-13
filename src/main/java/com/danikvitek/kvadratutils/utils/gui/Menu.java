@@ -7,40 +7,33 @@ import org.bukkit.inventory.Inventory;
 import java.util.HashMap;
 
 public class Menu {
-    private Inventory inv;
-    private HashMap<Integer,Button> buttons;
+    private final Inventory inventory;
+    private final HashMap<Integer, Button> buttons;
 
-
-    public Menu(Inventory inv) {
-        this.inv = inv;
-        buttons = new HashMap<Integer,Button>();
+    public Menu(Inventory inventory) {
+        this.inventory = inventory;
+        buttons = new HashMap<>();
     }
 
-    public void setButton(int slot,Button button) {
+    public void setButton(int slot, Button button) {
         buttons.put(slot, button);
     }
 
     public void performClick(Menu menu, InventoryClickEvent event) {
-
-        if (buttons.get(event.getSlot()) != null) {
+        if (buttons.get(event.getSlot()) != null)
             buttons.get(event.getSlot()).onClick(menu, event);
-
-        }
-
     }
 
     private void loadButtons() {
-        buttons.forEach((slot,button) -> {
-            inv.setItem(slot, button);
-        });
+        buttons.forEach(inventory::setItem);
     }
 
     protected void open(Player player) {
         loadButtons();
-        player.openInventory(inv);
+        player.openInventory(inventory);
     }
 
     public Inventory getInventory() {
-        return inv;
+        return inventory;
     }
 }
