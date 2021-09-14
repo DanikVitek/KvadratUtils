@@ -24,7 +24,7 @@ public class Menu {
             buttons.get(event.getSlot()).onClick(menu, event);
     }
 
-    private void loadButtons() {
+    protected void loadButtons() {
         buttons.forEach(inventory::setItem);
     }
 

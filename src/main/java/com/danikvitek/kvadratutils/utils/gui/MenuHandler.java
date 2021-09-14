@@ -28,6 +28,12 @@ public class MenuHandler {
         player.closeInventory();
     }
 
+    public void reloadMenu(Player player) {
+        if (openMenus.get(player.getUniqueId()) != null)
+            openMenus.get(player.getUniqueId()).loadButtons();
+        else openMenus.remove(player.getUniqueId());
+    }
+
     public boolean openedMenu(Player player) {
         if (!openMenus.isEmpty()) {
             return openMenus.containsKey(player.getUniqueId());

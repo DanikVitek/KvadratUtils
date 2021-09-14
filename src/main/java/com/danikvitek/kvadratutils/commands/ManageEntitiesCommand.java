@@ -46,11 +46,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 Inventory managerInventory = Bukkit.createInventory(null, 27, "Савн сущностей");
                 Menu managerMenu = new Menu(managerInventory);
                 pages.put(player, (byte) 0);
-                redrawMenu(player, managerMenu);
-                /*setIcons(managerMenu, (byte) 0);
-                setToggleControls(managerMenu, (byte) 0);
-                setPageControls(managerMenu, player);
-                Main.getMenuHandler().openMenu(player, managerMenu);*/
+                redrawMenu(player, managerMenu, false);
             }
             else
                 player.sendMessage(ChatColor.RED + "Нет прав на использование команды");
@@ -66,7 +62,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
                 pages.put(player, (byte) (pages.get(player) == 0 ? (byte) Math.ceil((double) entity_spawn.length / 9d) - 1 : (byte) (pages.get(player) - 1) % (byte) Math.ceil((double) entity_spawn.length / 9d)));
-                redrawMenu(player, managerMenu);
+                redrawMenu(player, managerMenu, true);
             }
         });
         managerMenu.setButton(26, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -74,7 +70,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
                 pages.put(player, (byte) ((pages.get(player) + 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
-                redrawMenu(player, managerMenu);
+                redrawMenu(player, managerMenu, true);
             }
         });
         managerMenu.setButton(22, new Button(ControlButtons.QUIT.getItemStack()) {
@@ -87,12 +83,16 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
         });
     }
 
-    private void redrawMenu(Player player, Menu managerMenu) {
+    private void redrawMenu(Player player, Menu managerMenu, boolean reload) {
         setIcons(managerMenu, pages.get(player));
         setToggleControls(managerMenu, pages.get(player));
         setPageControls(managerMenu, player);
-        Main.getMenuHandler().closeMenu(player);
-        Main.getMenuHandler().openMenu(player, managerMenu);
+        if (reload)
+            Main.getMenuHandler().reloadMenu(player);
+        else {
+            Main.getMenuHandler().closeMenu(player);
+            Main.getMenuHandler().openMenu(player, managerMenu);
+        }
     }
 
     private void setToggleControls(Menu managerMenu, byte page) {
@@ -142,7 +142,7 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    redrawMenu((Player) event.getWhoClicked(), managerMenu);
+                    redrawMenu((Player) event.getWhoClicked(), managerMenu, true);
                 }
             });
         }
