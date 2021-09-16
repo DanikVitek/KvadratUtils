@@ -64,15 +64,14 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                 }
             if (!isSaved)
                 saveCommandBlock(((BlockCommandSender) event.getSender()).getBlock());
-            new CommandBlockInstance(((BlockCommandSender) event.getSender()).getBlock().getLocation());
+            new CommandBlockInstance(((BlockCommandSender) event.getSender()).getBlock().getLocation(), true);
         }
     }
 
     /** Сохраняет блок в файл
      * @param commandBlock блок, который нужно сохранить
-     * @return true если успешно сохронён, иначе false
      */
-    public static boolean saveCommandBlock(Block commandBlock) {
+    public static void saveCommandBlock(Block commandBlock) {
         String key = String.valueOf(Main.getModifyCBLocationsFile().getKeys(false).stream().map(Long::parseUnsignedLong).max(Long::compareUnsigned).orElse(0L) + 1L);
         String uuid = String.valueOf(commandBlock.getWorld().getUID());
         long location = locationToLong(commandBlock.getLocation());
@@ -80,10 +79,8 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
         Main.getModifyCBLocationsFile().set(key + ".location", location);
         try {
             Main.getModifyCBLocationsFile().save(Main.getCBLocationsFile());
-            return true;
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
         }
     }
 

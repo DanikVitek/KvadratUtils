@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ItemBuilder {
     private final ItemStack itemStack;
@@ -75,6 +76,15 @@ public class ItemBuilder {
     }
 
     /**
+     * @param lore the strings list to set as the item lore.
+     * @return the ItemBuilder.
+     */
+    public ItemBuilder setLore(List<String> lore) {
+        this.itemMeta.setLore(lore);
+        return this;
+    }
+
+    /**
      * Sets the ItemStack being unbreakable
      * @param unbreakable if the result ItemStack is unbreakable
      * @return the ItemBuilder
@@ -94,6 +104,26 @@ public class ItemBuilder {
             this.itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         else
             this.itemMeta.removeItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        return this;
+    }
+
+    /**
+     * Set itemflags which should be ignored when rendering a ItemStack in the Client. This Method does silently ignore double set itemFlags.
+     * @param itemFlags set of ItemFlags
+     * @return the ItemBuilder
+     */
+    public ItemBuilder addItemFlags(ItemFlag ...itemFlags) {
+        this.itemMeta.addItemFlags(itemFlags);
+        return this;
+    }
+
+    /**
+     * Remove specific set of itemFlags. This tells the Client it should render it again. This Method does silently ignore double removed itemFlags.
+     * @param itemFlags set of ItemFlags
+     * @return the ItemBuilder
+     */
+    public ItemBuilder removeItemFlags(ItemFlag ...itemFlags) {
+        this.itemMeta.removeItemFlags(itemFlags);
         return this;
     }
 
@@ -138,7 +168,14 @@ public class ItemBuilder {
      * @return the ItemStack that has been created.
      */
     public ItemStack build() {
-        this.updateItemMeta();
+        updateItemMeta();
         return this.itemStack;
+    }
+
+    /**
+     * @return the ItemMeta
+     */
+    public ItemMeta getItemMeta() {
+        return itemMeta;
     }
 }

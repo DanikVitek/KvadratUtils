@@ -5,7 +5,6 @@ import com.danikvitek.kvadratutils.utils.ItemBuilder;
 import com.danikvitek.kvadratutils.utils.gui.Button;
 import com.danikvitek.kvadratutils.utils.gui.ControlButtons;
 import com.danikvitek.kvadratutils.utils.gui.Menu;
-import com.danikvitek.kvadratutils.utils.gui.MenuHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -18,21 +17,21 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-public class ManageEntitiesCommand implements CommandExecutor, Listener {
-    private static final HashMap<Player, Byte> pages = new HashMap<>();
+public class EntityManagerCommand implements CommandExecutor, Listener {
+    private static final HashMap<UUID, Byte> pages = new HashMap<>();
     private final boolean[] entity_spawn = new boolean[26];
     private final List<String> keys;
 
-    public ManageEntitiesCommand() {
+    public EntityManagerCommand() {
         keys = new ArrayList<>(Main.getModifyEntityManagerFile().getKeys(false));
         for (int i = 0; i < entity_spawn.length; i++)
             entity_spawn[i] = Main.getModifyEntityManagerFile().getBoolean(keys.get(i));
@@ -42,10 +41,11 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            if (player.hasPermission("kvadratutils.moderator")) {
-                Inventory managerInventory = Bukkit.createInventory(null, 27, "Савн сущностей");
+            if (player.hasPermission("kvadratutils.moderator") ||
+                player.hasPermission("kvadratutils.command.entity_manager")) {
+                Inventory managerInventory = Bukkit.createInventory(null, 27, "Спавн сущностей");
                 Menu managerMenu = new Menu(managerInventory);
-                pages.put(player, (byte) 0);
+                pages.put(player.getUniqueId(), (byte) 0);
                 redrawMenu(player, managerMenu, false);
             }
             else
@@ -56,36 +56,9 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
         return true;
     }
 
-    private void setPageControls(Menu managerMenu, Player player) {
-        managerMenu.setButton(18, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
-            @Override
-            public void onClick(Menu menu, InventoryClickEvent event) {
-                event.setCancelled(true);
-                pages.put(player, (byte) (pages.get(player) == 0 ? (byte) Math.ceil((double) entity_spawn.length / 9d) - 1 : (byte) (pages.get(player) - 1) % (byte) Math.ceil((double) entity_spawn.length / 9d)));
-                redrawMenu(player, managerMenu, true);
-            }
-        });
-        managerMenu.setButton(26, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
-            @Override
-            public void onClick(Menu menu, InventoryClickEvent event) {
-                event.setCancelled(true);
-                pages.put(player, (byte) ((pages.get(player) + 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
-                redrawMenu(player, managerMenu, true);
-            }
-        });
-        managerMenu.setButton(22, new Button(ControlButtons.QUIT.getItemStack()) {
-            @Override
-            public void onClick(Menu menu, InventoryClickEvent event) {
-                event.setCancelled(true);
-                pages.remove(player);
-                Main.getMenuHandler().closeMenu(player);
-            }
-        });
-    }
-
     private void redrawMenu(Player player, Menu managerMenu, boolean reload) {
-        setIcons(managerMenu, pages.get(player));
-        setToggleControls(managerMenu, pages.get(player));
+        setIcons(managerMenu, pages.get(player.getUniqueId()));
+        setToggleControls(managerMenu, pages.get(player.getUniqueId()));
         setPageControls(managerMenu, player);
         if (reload)
             Main.getMenuHandler().reloadMenu(player);
@@ -93,6 +66,37 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             Main.getMenuHandler().closeMenu(player);
             Main.getMenuHandler().openMenu(player, managerMenu);
         }
+    }
+
+    private void setPageControls(Menu managerMenu, Player player) {
+        managerMenu.setButton(18, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.put(
+                        player.getUniqueId(),
+                        (byte) (pages.get(player.getUniqueId()) == 0
+                                ? (byte) Math.ceil((double) entity_spawn.length / 9d) - 1
+                                : pages.get(player.getUniqueId()) - 1));
+                redrawMenu(player, managerMenu, true);
+            }
+        });
+        managerMenu.setButton(26, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.put(player.getUniqueId(), (byte) ((pages.get(player.getUniqueId()) + 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
+                redrawMenu(player, managerMenu, true);
+            }
+        });
+        managerMenu.setButton(22, new Button(ControlButtons.QUIT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.remove(player.getUniqueId());
+                Main.getMenuHandler().closeMenu(player);
+            }
+        });
     }
 
     private void setToggleControls(Menu managerMenu, byte page) {
@@ -146,6 +150,36 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 }
             });
         }
+        managerMenu.setButton(21, new Button(new ItemBuilder(Material.RED_STAINED_GLASS_PANE).setDisplayName("Отключить всё").build()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                Arrays.fill(entity_spawn, false);
+                for (String key: keys)
+                    Main.getModifyEntityManagerFile().set(key, false);
+                try {
+                    Main.getModifyEntityManagerFile().save(Main.getEntityManagerFile());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                redrawMenu((Player) event.getWhoClicked(), managerMenu, true);
+            }
+        });
+        managerMenu.setButton(23, new Button(new ItemBuilder(Material.LIME_STAINED_GLASS_PANE).setDisplayName("Включить всё").build()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                Arrays.fill(entity_spawn, true);
+                for (String key: keys)
+                    Main.getModifyEntityManagerFile().set(key, true);
+                try {
+                    Main.getModifyEntityManagerFile().save(Main.getEntityManagerFile());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                redrawMenu((Player) event.getWhoClicked(), managerMenu, true);
+            }
+        });
     }
 
     private void setIcons(Menu managerMenu, byte page) {
@@ -157,8 +191,8 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
                 icons.add(new ItemBuilder(Material.FIRE_CHARGE).setDisplayName("Фаерболы").build());
                 icons.add(new ItemBuilder(Material.SAND).setDisplayName("Падающие блоки").build());
                 icons.add(new ItemBuilder(Material.ANVIL).setDisplayName("Падающие наковальни").build());
-                icons.add(new ItemBuilder(Material.TRIDENT).setDisplayName("Трезубцы").build());
-                icons.add(new ItemBuilder(Material.FIREWORK_ROCKET).setDisplayName("Феерверки").build());
+                icons.add(new ItemBuilder(Material.TRIDENT).setDisplayName("Трезубцы").addItemFlags(ItemFlag.HIDE_ATTRIBUTES).build());
+                icons.add(new ItemBuilder(Material.FIREWORK_ROCKET).setDisplayName("Фейерверки").build());
                 icons.add(new ItemBuilder(Material.CAT_SPAWN_EGG).setDisplayName("Мирные мобы").build());
                 icons.add(new ItemBuilder(Material.CREEPER_SPAWN_EGG).setDisplayName("Враждебные мобы").build());
                 break;
@@ -228,6 +262,12 @@ public class ManageEntitiesCommand implements CommandExecutor, Listener {
             (!entity_spawn[24] && entity instanceof ThrownPotion) ||
             (!entity_spawn[25] && entity instanceof Item)
         )
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event) {
+        if (!entity_spawn[25])
             event.setCancelled(true);
     }
 }

@@ -4,23 +4,73 @@ main: com.danikvitek.kvadratutils.Main
 api-version: 1.16
 authors: [ Danik_Vitek ]
 description: Модерация серверов Квадратного
+depend:
+  - LuckPerms
 
 commands:
+  menus:
+    permission: kvadratutils.command.menus
+    aliases:
+      - manage
+      - moderate
+    description: Открывает меню настроек сервера
+    usage: "/menus, /manage, /moderate"
   command_blocks:
+    permission: kvadratutils.command.command_blocks
     aliases:
       - cb
     description: Открывает меню контроля за командными блоками
     usage: "/command_blocks, /cb"
-  manage_entities:
+  entity_manager:
+    permission: kvadratutils.command.entity_manager
     aliases:
       - entities
       - manager
-      - entity_manager
+      - manage_entities
     description: Открывает меню управления сущьностями
     usage: "/manage_entities, /entity_manager, /entities, /manager"
+  skin_select:
+    permission: kvadratutils.command.skin_select
+    aliases:
+      - ss
+    description: Открывает меню выбора скина
+    usage: "/skin_select, /ss"
+  tp_menu:
+    permission: kvadratutils.command.tp_menu
+    aliases:
+      - tm
+    description: Открывает меню телепортации к игрокам
+    usage: "/tp_menu, /tm"
+  manage_permissions:
+    permission: kvadratutils.command.manage_permissions
+    aliases:
+      - permissions
+      - permission_manager
+      - mp
+    description: Открывает меню управления разрешениями
+    usage: "/manage_permissions, /permissions, /permission_manager, /mp"
 
 permissions:
   kvadratutils.moderator:
     default: op
+    children:
+      - kvadratutils.f3n_f3f4
+      - kvadratutils.command.manage
+      - kvadratutils.command.command_blocks
+      - kvadratutils.command.entity_manager
+      - kvadratutils.command.menus
+      - kvadratutils.command.skin_select
+      - kvadratutils.command.tp_menu
+      - kvadratutils.command.manage_permissions
   kvadratutils.f3n_f3f4:
-    default: true
+    default: op
+  kvadratutils.command.manage:
+    default: op
+  kvadratutils.command.command_blocks:
+    default: op
+  kvadratutils.command.entity_manager:
+    default: op
+  kvadratutils.command.menus:
+    default: op
+  kvadratutils.command.tp_menu:
+    default: op
