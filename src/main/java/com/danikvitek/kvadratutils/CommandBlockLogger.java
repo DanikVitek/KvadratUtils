@@ -1,14 +1,15 @@
 package com.danikvitek.kvadratutils;
 
+import com.danikvitek.kvadratutils.utils.Converter;
+import com.danikvitek.kvadratutils.utils.QueryBuilder;
+import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.CommandBlock;
 import org.bukkit.command.BlockCommandSender;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -16,26 +17,39 @@ import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommandBlockLogger implements Listener { // TODO: log command minecarts
+    private static long timestamp = System.currentTimeMillis();
+    private static final long period = 2000L;
+    private static final long periodGap = 100L;
+    public static final BukkitTask newTimeStamp = new BukkitRunnable() {
+        @Override
+        public void run() {
+            if (System.currentTimeMillis() >= timestamp)
+                timestamp = System.currentTimeMillis() + period;
+        }
+    }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 0L);
+
     @EventHandler
     public void onCBPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
-        if (block.getState() instanceof CommandBlock) {
-            Material type = block.getType();
-            boolean conditional = ((org.bukkit.block.data.type.CommandBlock) block.getBlockData()).isConditional();
-            BlockFace facing = ((org.bukkit.block.data.type.CommandBlock) block.getBlockData()).getFacing();
-            String command = ((CommandBlock) block.getState()).getCommand();
-//            TileEntityCommand
-        }
+        if (block.getState() instanceof CommandBlock) saveCommandBlock(block);
     }
 
     @EventHandler
     public void onCBMultiPlace(BlockMultiPlaceEvent event) {
-
+        for (BlockState blockState : event.getReplacedBlockStates())
+            if (blockState instanceof CommandBlock) saveCommandBlock(blockState.getBlock());
     }
 
     @EventHandler
@@ -56,79 +70,144 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
     @EventHandler
     public void onCBCommand(ServerCommandEvent event) {
         if (event.getSender() instanceof BlockCommandSender) {
-            boolean isSaved = false;
-            for (String key: Main.getModifyCBLocationsFile().getKeys(false))
-                if (((BlockCommandSender) event.getSender()).getBlock().getState().equals(loadCommandBlock(key))) {
-                    isSaved = true;
-                    break;
-                }
-            if (!isSaved)
-                saveCommandBlock(((BlockCommandSender) event.getSender()).getBlock());
-            new CommandBlockInstance(((BlockCommandSender) event.getSender()).getBlock().getLocation(), true);
+            CommandBlock commandBlock = (CommandBlock) ((BlockCommandSender) event.getSender()).getBlock().getState();
+            Block block = commandBlock.getBlock();
+            if (System.currentTimeMillis() + (period - periodGap) < timestamp) {
+                AtomicBoolean isSaved = new AtomicBoolean(false);
+                Main.makeExecuteQuery(
+                        new QueryBuilder().select(Main.cbTableName).what("ID").from().build(), new HashMap<>(),
+                        (args, rs) -> {
+                            if (rs != null) {
+                                int key;
+                                try {
+                                    while (rs.next()) {
+                                        key = rs.getInt(1);
+                                        Block cbBlock = loadCommandBlock(key);
+                                        if (Objects.equals(cbBlock, cbBlock != null ? cbBlock.getState() : null)) {
+                                            isSaved.set(true);
+                                            break;
+                                        }
+                                    }
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                                return true;
+                            }
+                            return false;
+                        },
+                        null);
+                if (!isSaved.get()) saveCommandBlock(block);
+            }
+            new CommandBlockInstance(block.getLocation(), true);
         }
     }
 
-    /** Сохраняет блок в файл
+    /**
+     * Сохраняет блок в базу данных
+     *
      * @param commandBlock блок, который нужно сохранить
      */
     public static void saveCommandBlock(Block commandBlock) {
-        String key = String.valueOf(Main.getModifyCBLocationsFile().getKeys(false).stream().map(Long::parseUnsignedLong).max(Long::compareUnsigned).orElse(0L) + 1L);
-        String uuid = String.valueOf(commandBlock.getWorld().getUID());
-        long location = locationToLong(commandBlock.getLocation());
-        Main.getModifyCBLocationsFile().set(key + ".world", uuid);
-        Main.getModifyCBLocationsFile().set(key + ".location", location);
-        try {
-            Main.getModifyCBLocationsFile().save(Main.getCBLocationsFile());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /** загружает блок из файла конфигурации
-     * @param key ключ ConfigurationSection
-     * @return CommandBLock extends BlockState если блок найден, иначе null
-     * @throws IllegalArgumentException если нет ConfigurationSection с таким ключём
-     */
-    public static CommandBlock loadCommandBlock(String key) throws IllegalArgumentException {
-        ConfigurationSection blockSection = Main.getModifyCBLocationsFile().getConfigurationSection(key);
-        if (blockSection != null) {
-            Location location = locationFromLong(
-                    blockSection.getString("world"),
-                    blockSection.getLong("location")
-            );
-            if (location.getBlock().getState() instanceof CommandBlock)
-                return (CommandBlock) location.getBlock().getState();
-            else {
-                Main.getModifyCBLocationsFile().set(key, null);
-                try {
-                    Main.getModifyCBLocationsFile().save(Main.getCBLocationsFile());
-                } catch (IOException e) {
-                    if (!Main.getCBLocationsFile().exists()) {
-                        try {
-                            Main.getCBLocationsFile().createNewFile();
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                    Main.setModifyCBLocationsFile(YamlConfiguration.loadConfiguration(Main.getCBLocationsFile()));
-                }
-                return null;
+        String worldUUID = String.valueOf(commandBlock.getWorld().getUID());
+        long location = Converter.locationToLong(commandBlock.getLocation());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                HashMap<Integer, byte[]> values = new HashMap<>();
+                values.put(1, Converter.uuidToBytes(UUID.fromString(worldUUID)));
+                Main.makeExecuteQuery(
+                        new QueryBuilder().select(Main.worldsTableName) // Select ID of world where world's UUID == value
+                                .what("ID")
+                                .from()
+                                .where("UUID = ?")
+                                .build(), values,
+                        (args, worldResultSet) -> {
+                            if (worldResultSet != null) {
+                                try {
+                                    worldResultSet.next();
+                                    Main.makeExecuteQuery(new QueryBuilder().select(Main.cbTableName)
+                                            .what("ID")
+                                            .from()
+                                            .where("World_ID = '" + worldResultSet.getInt(1) + "' AND Location = '" + location + "'")
+                                            .build(),
+                                            new HashMap<>(),
+                                            (args1, rs) -> {
+                                                try {
+                                                    if (!rs.next()) {
+                                                        Main.makeExecuteUpdate(new QueryBuilder().insert(Main.cbTableName) // insert cb in table with world_id and location
+                                                                .setColumns("World_ID", "Location")
+                                                                .setValues("'" + worldResultSet.getInt(1) + "'", "'" + location + "'")
+                                                                .build(), new HashMap<>());
+                                                        return true;
+                                                    }
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                return false;
+                                            },
+                                            null
+                                    );
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                                return true;
+                            }
+                            return false;
+                        }, null);
             }
-        }
-        else
-            throw new IllegalArgumentException("Нет секции с таким ключём (" + key + ")");
+        }.runTaskAsynchronously(Main.getPlugin(Main.class));
     }
 
-    public static Location locationFromLong(final String uuid, final long l) {
-        return new Location(
-                Bukkit.getWorld(UUID.fromString(uuid)),
-                (int)(l >> 38),
-                (int)(l << 26 >> 52),
-                (int)(l << 38 >> 38)
-        );
-    }
-
-    public static long locationToLong(final Location l) {
-        return ((long) l.getX() & 67108863) << 38 | ((long) l.getY() & 4095) << 26 | ((long) l.getZ() & 67108863);
+    /**
+     * Загружает блок из базы данных
+     *
+     * @param key индекс в базе данных
+     * @return CommandBLock extends BlockState если блок найден, иначе null
+     * @throws IllegalArgumentException если нет записи с таким идексом
+     */
+    public static @Nullable Block loadCommandBlock(int key) throws IllegalArgumentException {
+        return Main.makeExecuteQuery(
+                new QueryBuilder().select(Main.cbTableName)
+                        .what("World_ID, Location")
+                        .from()
+                        .where("ID = '" + key + "'")
+                        .build(), new HashMap<>(),
+                (args, cbResultSet) -> {
+                    if (cbResultSet != null) {
+                        try {
+                            if (cbResultSet.next()) {
+                                return Main.makeExecuteQuery(
+                                        new QueryBuilder().select(Main.worldsTableName)
+                                                .what("UUID")
+                                                .from()
+                                                .where("ID = '" + cbResultSet.getInt(1) + "'")
+                                                .build(), new HashMap<>(),
+                                        (args1, worldResultSet) -> {
+                                            if (worldResultSet != null) {
+                                                try {
+                                                    worldResultSet.next();
+                                                    World world = Bukkit.getWorld(Converter.uuidFromBytes(worldResultSet.getBytes(1)));
+                                                    long longLocation = cbResultSet.getLong(2);
+                                                    Location loc = Converter.locationFromLong(world, longLocation);
+//                                                    System.out.printf("%d, %d, %d\n", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                                                    int chunkX = loc.getBlockX() % 16 < 0 ? (loc.getBlockX() % 16) + 16 : loc.getBlockX() % 16,
+                                                        chunkY = loc.getBlockY() > 255 ? 255 : Math.max(loc.getBlockY(), 0),
+                                                        chunkZ = loc.getBlockZ() % 16 < 0 ? (loc.getBlockZ() % 16) + 16 : loc.getBlockZ() % 16;
+//                                                    System.out.printf("%d, %d, %d\n", chunkX, chunkY, chunkZ);
+//                                                    System.out.println(PaperLib.getChunkAtAsync(loc).get().getBlock(chunkX, chunkY, chunkZ).getState().getType());
+                                                    return PaperLib.getChunkAtAsync(loc).get().getBlock(chunkX, chunkY, chunkZ);
+                                                } catch (SQLException | ExecutionException | InterruptedException e) {
+                                                    e.printStackTrace();
+                                                    return null;
+                                                }
+                                            } else return null;
+                                        }, null);
+                            } else throw new IllegalArgumentException("Нет секции с таким ключём (" + key + ")");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    } else return null;
+                }, null);
     }
 }

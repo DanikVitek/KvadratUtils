@@ -58,18 +58,18 @@ public class Reflector {
         }
     }
 
-    public void sendOpenCBGUI(Player player, Block commandBlock) {
-        ((BlockCommand) ((CraftCommandBlock) commandBlock.getState()).getHandle().getBlock()).interact(
-                ((CraftCommandBlock) commandBlock.getState()).getHandle(),
-                ((CraftWorld) Objects.requireNonNull(commandBlock.getLocation().getWorld())).getHandle(),
-                new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
-                ((CraftPlayer) player).getHandle(),
-                EnumHand.MAIN_HAND,
-                MovingObjectPositionBlock.a(
-                        new Vec3D(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
-                        EnumDirection.UP,
-                        new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ())
-                )
-        );
-    }
+//    public void sendOpenCBGUI(Player player, Block commandBlock) {
+//        ((BlockCommand) ((CraftCommandBlock) commandBlock.getState()).getHandle().getBlock()).interact(
+//                ((CraftCommandBlock) commandBlock.getState()).getHandle(),
+//                ((CraftWorld) Objects.requireNonNull(commandBlock.getLocation().getWorld())).getHandle(),
+//                new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
+//                ((CraftPlayer) player).getHandle(),
+//                EnumHand.MAIN_HAND,
+//                MovingObjectPositionBlock.a(
+//                        new Vec3D(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
+//                        EnumDirection.UP,
+//                        new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ())
+//                )
+//        );
+//    }
 }

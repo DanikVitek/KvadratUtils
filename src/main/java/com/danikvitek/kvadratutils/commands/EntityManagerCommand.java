@@ -106,8 +106,8 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 for (int i = 0; i < 9; i++) {
                     toggleControls.add(
                             entity_spawn[i]
-                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName("Разрешен").build()
-                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName("Запрещён").build()
+                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName(ChatColor.GREEN + "Разрешен").build()
+                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName(ChatColor.RED + "Запрещён").build()
                     );
                 }
                 break;
@@ -116,8 +116,8 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 for (int i = 9; i < 18; i++) {
                     toggleControls.add(
                             entity_spawn[i]
-                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName("Разрешен").build()
-                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName("Запрещён").build()
+                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName(ChatColor.GREEN + "Разрешен").build()
+                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName(ChatColor.RED + "Запрещён").build()
                     );
                 }
                 break;
@@ -126,8 +126,8 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 for (int i = 18; i < entity_spawn.length; i++) {
                     toggleControls.add(
                             entity_spawn[i]
-                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName("Разрешен").build()
-                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName("Запрещён").build()
+                                    ? new ItemBuilder(Material.LIME_WOOL).setDisplayName(ChatColor.GREEN + "Разрешен").build()
+                                    : new ItemBuilder(Material.RED_WOOL).setDisplayName(ChatColor.RED + "Запрещён").build()
                     );
                 }
                 break;
@@ -150,7 +150,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 }
             });
         }
-        managerMenu.setButton(21, new Button(new ItemBuilder(Material.RED_STAINED_GLASS_PANE).setDisplayName("Отключить всё").build()) {
+        managerMenu.setButton(21, new Button(new ItemBuilder(Material.RED_STAINED_GLASS_PANE).setDisplayName(ChatColor.RED + "Отключить всё").build()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
@@ -165,7 +165,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 redrawMenu((Player) event.getWhoClicked(), managerMenu, true);
             }
         });
-        managerMenu.setButton(23, new Button(new ItemBuilder(Material.LIME_STAINED_GLASS_PANE).setDisplayName("Включить всё").build()) {
+        managerMenu.setButton(23, new Button(new ItemBuilder(Material.LIME_STAINED_GLASS_PANE).setDisplayName(ChatColor.GREEN + "Включить всё").build()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);

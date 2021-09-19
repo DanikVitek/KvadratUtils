@@ -52,25 +52,30 @@ commands:
 
 permissions:
   kvadratutils.moderator:
-    default: op
+    default: false
     children:
       - kvadratutils.f3n_f3f4
-      - kvadratutils.command.manage
       - kvadratutils.command.command_blocks
       - kvadratutils.command.entity_manager
       - kvadratutils.command.menus
       - kvadratutils.command.skin_select
       - kvadratutils.command.tp_menu
       - kvadratutils.command.manage_permissions
+      - kvadratutils.teleport_to_player.*
+      - kvadratutils.teleport_player.*
   kvadratutils.f3n_f3f4:
-    default: op
+    default: false
   kvadratutils.command.manage:
-    default: op
+    default: false
   kvadratutils.command.command_blocks:
-    default: op
+    default: false
   kvadratutils.command.entity_manager:
-    default: op
+    default: false
   kvadratutils.command.menus:
-    default: op
+    default: true
   kvadratutils.command.tp_menu:
-    default: op
+    default: false
+  kvadratutils.teleport_to_player.*:
+    default: false
+  kvadratutils.teleport_player.*:
+    default: false

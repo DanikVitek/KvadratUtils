@@ -4,7 +4,7 @@ public class QueryBuilder {
     private final StringBuilder query = new StringBuilder();
 
     public CreateTableQuery createTable(final String tableName) {
-        query.append("CREATE TABLE ").append(tableName).append(" (");
+        query.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
         return new CreateTableQuery();
     }
 

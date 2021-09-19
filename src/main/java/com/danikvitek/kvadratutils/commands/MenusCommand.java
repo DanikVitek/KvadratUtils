@@ -39,7 +39,7 @@ public class MenusCommand implements CommandExecutor {
                     40
                  */
 
-                menusMenu.setButton(4, new Button(new ItemBuilder(Material.BEE_SPAWN_EGG).setDisplayName("Диспетчер сущностей").build()) {
+                menusMenu.setButton(4, new Button(new ItemBuilder(Material.BEE_SPAWN_EGG).setDisplayName("Менеджер сущностей").build()) {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
@@ -98,7 +98,7 @@ public class MenusCommand implements CommandExecutor {
         return true;
     }
 
-    private static ItemStack getPlayerHead() {
+    public static ItemStack getPlayerHead() {
         ItemStack setSkinPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Установить скин").build();
         SkullMeta meta = (SkullMeta) setSkinPlayerHead.getItemMeta();
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);

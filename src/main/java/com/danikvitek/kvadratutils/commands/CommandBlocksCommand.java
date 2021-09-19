@@ -68,7 +68,7 @@ public class CommandBlocksCommand implements CommandExecutor {
                 @Override
                 public void onClick(Menu menu, InventoryClickEvent event) {
                     event.setCancelled(true);
-                    Main.getMenuHandler().closeMenu(player);
+//                    Main.getMenuHandler().closeMenu(player);
 //                    Main.getReflector().sendOpenCBGUI(player, Objects.requireNonNull(Bukkit.getWorld(ChatColor.stripColor(Objects.requireNonNull(Objects.requireNonNull(cb.getItemMeta()).getLore()).get(1)).substring(5))).getBlockAt(x, y, z));
                 }
             });
