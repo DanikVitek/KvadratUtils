@@ -24,3 +24,4 @@ boss: true
 xp: true
 potions: true
 items: true
+armor_stands: true

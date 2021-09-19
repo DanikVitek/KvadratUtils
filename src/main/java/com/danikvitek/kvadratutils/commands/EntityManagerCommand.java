@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -28,7 +29,7 @@ import java.util.*;
 
 public class EntityManagerCommand implements CommandExecutor, Listener {
     private static final HashMap<UUID, Byte> pages = new HashMap<>();
-    private final boolean[] entity_spawn = new boolean[26];
+    private final boolean[] entity_spawn = new boolean[27];
     private final List<String> keys;
 
     public EntityManagerCommand() {
@@ -218,6 +219,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 icons.add(new ItemBuilder(Material.EXPERIENCE_BOTTLE).setDisplayName("Бутылоки и сферы опыта").build());
                 icons.add(new ItemBuilder(Material.SPLASH_POTION).setDisplayName("Зелья").build());
                 icons.add(new ItemBuilder(Material.PAPER).setDisplayName("Предметы").build());
+                icons.add(new ItemBuilder(Material.ARMOR_STAND).setDisplayName("Стойки для брони").build());
                 break;
             }
         }
@@ -244,13 +246,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
             (!entity_spawn[6] && entity instanceof Firework) ||
             (!entity_spawn[7] && ((entity instanceof Creature && !(entity instanceof Monster)) || entity instanceof Ambient)) ||
             (!entity_spawn[8] && entity instanceof Monster) ||
-            (!entity_spawn[9] && entity instanceof RideableMinecart) || // !(entity instanceof StorageMinecart || entity instanceof PoweredMinecart || entity instanceof HopperMinecart || entity instanceof ExplosiveMinecart || entity instanceof CommandMinecart || entity instanceof SpawnerMinecart)
-            (!entity_spawn[10] && entity instanceof StorageMinecart) ||
-            (!entity_spawn[11] && entity instanceof HopperMinecart) ||
-            (!entity_spawn[12] && entity instanceof ExplosiveMinecart) ||
-            (!entity_spawn[13] && entity instanceof PoweredMinecart) ||
-            (!entity_spawn[14] && entity instanceof CommandMinecart) ||
-            (!entity_spawn[15] && entity instanceof SpawnerMinecart) ||
+
             (!entity_spawn[16] && entity instanceof ShulkerBullet) ||
             (!entity_spawn[17] && entity instanceof ItemFrame) ||
             (!entity_spawn[18] && entity instanceof Snowball) ||
@@ -260,7 +256,23 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
             (!entity_spawn[22] && entity instanceof Boss) ||
             (!entity_spawn[23] && (entity instanceof ExperienceOrb || entity instanceof ThrownExpBottle)) ||
             (!entity_spawn[24] && entity instanceof ThrownPotion) ||
-            (!entity_spawn[25] && entity instanceof Item)
+            (!entity_spawn[25] && entity instanceof Item) ||
+            (!entity_spawn[26] && entity instanceof ArmorStand)
+        )
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onMinecart(VehicleCreateEvent event) {
+        Vehicle vehicle = event.getVehicle();
+        if (
+            (!entity_spawn[9]  && vehicle instanceof RideableMinecart) ||
+            (!entity_spawn[10] && vehicle instanceof StorageMinecart) ||
+            (!entity_spawn[11] && vehicle instanceof HopperMinecart) ||
+            (!entity_spawn[12] && vehicle instanceof ExplosiveMinecart) ||
+            (!entity_spawn[13] && vehicle instanceof PoweredMinecart) ||
+            (!entity_spawn[14] && vehicle instanceof CommandMinecart) ||
+            (!entity_spawn[15] && vehicle instanceof SpawnerMinecart)
         )
             event.setCancelled(true);
     }
