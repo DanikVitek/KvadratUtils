@@ -72,10 +72,18 @@ permissions:
   kvadratutils.command.entity_manager:
     default: false
   kvadratutils.command.menus:
-    default: true
+    default: op
   kvadratutils.command.tp_menu:
     default: false
   kvadratutils.teleport_to_player.*:
-    default: false
+    default: true
+    description: Разрешение телепортации к конкретному игроку
   kvadratutils.teleport_player.*:
+    default: true
+    description: Разрешение телепортации конкретного игрока
+  kvadratutils.not_teleport:
     default: false
+    description: Блокировка телепорта себя к другим
+  kvadratutils.not_teleport_to:
+    default: false
+    description: Блокировка телепорта к себе

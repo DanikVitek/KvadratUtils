@@ -25,3 +25,7 @@ xp: true
 potions: true
 items: true
 armor_stands: true
+boats: true
+leash_hitch: true
+evoker_fangs: true
+lightning: true

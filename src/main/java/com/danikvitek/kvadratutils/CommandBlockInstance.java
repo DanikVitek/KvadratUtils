@@ -30,8 +30,12 @@ public class CommandBlockInstance {
             command = commandBlock.getCommand();
             if (!commandBlockInstances.containsKey(this))
                 commandBlockInstances.put(this, 0L);
-            else
+            else {
+                Long commandsExecuted = commandBlockInstances.get(this);
+                commandBlockInstances.remove(this);
+                commandBlockInstances.put(this, commandsExecuted);
                 addCommandExecuted();
+            }
             if (fromCommandExecution)
                 addCommandExecuted();
         }

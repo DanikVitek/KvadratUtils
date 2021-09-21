@@ -3,10 +3,7 @@ package com.danikvitek.kvadratutils.commands;
 import com.danikvitek.kvadratutils.CommandBlockInstance;
 import com.danikvitek.kvadratutils.Main;
 import com.danikvitek.kvadratutils.utils.ItemBuilder;
-import com.danikvitek.kvadratutils.utils.gui.ControlButtons;
-import com.danikvitek.kvadratutils.utils.gui.Button;
-import com.danikvitek.kvadratutils.utils.gui.Menu;
-import com.danikvitek.kvadratutils.utils.gui.PageUtil;
+import com.danikvitek.kvadratutils.utils.gui.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -23,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class CommandBlocksCommand implements CommandExecutor {
-    private static HashMap<UUID, Integer> pages = new HashMap<>();
+    private static final HashMap<UUID, Integer> pages = new HashMap<>();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {

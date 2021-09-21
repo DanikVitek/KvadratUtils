@@ -8,9 +8,7 @@ import com.danikvitek.kvadratutils.utils.gui.MenuHandler;
 import com.danikvitek.kvadratutils.utils.nms.Reflector;
 import com.danikvitek.kvadratutils.utils.nms.Reflector_1_17;
 import com.danikvitek.kvadratutils.utils.nms.Reflector_1_8;
-import com.google.common.collect.Multimap;
 import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
-import com.mysql.cj.protocol.ResultsetRows;
 import io.papermc.lib.PaperLib;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.node.NodeType;
@@ -23,10 +21,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -36,9 +33,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class Main extends JavaPlugin implements Listener {
@@ -107,13 +106,16 @@ public final class Main extends JavaPlugin implements Listener {
 
         Objects.requireNonNull(getCommand("command_blocks")).setExecutor(new CommandBlocksCommand());
 
-        EntityManagerCommand mec = new EntityManagerCommand();
-        Bukkit.getPluginManager().registerEvents(mec, this);
-        Objects.requireNonNull(getCommand("entity_manager")).setExecutor(mec);
+        EntityManagerCommand entityManagerCommand = new EntityManagerCommand();
+        Bukkit.getPluginManager().registerEvents(entityManagerCommand, this);
+        Objects.requireNonNull(getCommand("entity_manager")).setExecutor(entityManagerCommand);
+
+        TPMenuCommand tpMenuCommand = new TPMenuCommand();
+        Bukkit.getPluginManager().registerEvents(tpMenuCommand, this);
+        getCommand("tp_menu").setExecutor(tpMenuCommand);
 
         getCommand("menus").setExecutor(new MenusCommand());
         getCommand("skin_select").setExecutor(new SkinSelectCommand());
-        getCommand("tp_menu").setExecutor(new TPMenuCommand());
         getCommand("manage_permissions").setExecutor(new ManagePermissionsCommand());
 
         // Database
@@ -151,6 +153,21 @@ public final class Main extends JavaPlugin implements Listener {
         for (Player player: Bukkit.getOnlinePlayers()) {
             if (player.hasPermission("kvadratutils.f3n_f3f4"))
                 reflector.sendPseudoOPStatus(player);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
+                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
+                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
+                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
+//                    for (Player otherPlayer: Bukkit.getOnlinePlayers()) {
+//                        if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + otherPlayer.getName()))
+//                            luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + otherPlayer.getName()).value(true).build()));
+//                        if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + otherPlayer.getName()))
+//                            luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + otherPlayer.getName()).value(true).build()));
+//                    }
+                }
+            }.runTaskAsynchronously(this);
         }
     }
 
@@ -170,6 +187,25 @@ public final class Main extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         if (player.hasPermission("kvadratutils.f3n_f3f4"))
             reflector.sendPseudoOPStatus(player);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
+                    luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
+                if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
+                    luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
+//                for (Player otherPlayer: Bukkit.getOnlinePlayers()) {
+//                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + otherPlayer.getName()))
+//                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + otherPlayer.getName()).value(true).build()));
+//                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + otherPlayer.getName()))
+//                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + otherPlayer.getName()).value(true).build()));
+//                    if (!luckPermsAPI.getUserManager().getUser(otherPlayer.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + player.getName()))
+//                        luckPermsAPI.getUserManager().modifyUser(otherPlayer.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + player.getName()).value(true).build()));
+//                    if (!luckPermsAPI.getUserManager().getUser(otherPlayer.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + player.getName()))
+//                        luckPermsAPI.getUserManager().modifyUser(otherPlayer.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + player.getName()).value(true).build()));
+//                }
+            }
+        }.runTaskAsynchronously(this);
     }
 
     @Override
@@ -177,6 +213,8 @@ public final class Main extends JavaPlugin implements Listener {
         menuHandler.closeAll();
         if (!CommandBlockLogger.newTimeStamp.isCancelled())
             CommandBlockLogger.newTimeStamp.cancel();
+        if (!EntityManagerCommand.removeXPOrbsInChunksTask.isCancelled())
+            EntityManagerCommand.removeXPOrbsInChunksTask.cancel();
     }
 
     public static MenuHandler getMenuHandler() {
@@ -280,10 +318,11 @@ public final class Main extends JavaPlugin implements Listener {
 
     private static void createCBTable() throws SQLException {
         String createTableQuery = new QueryBuilder().createTable(cbTableName)
-                .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
+//                .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
                 .addAttribute("World_ID", "INT NOT NULL")
                 .addAttribute("Location", "BIGINT NOT NULL")
-                .setPrimaryKeys("ID")
+//                .setPrimaryKeys("ID")
+                .setPrimaryKeys("World_ID", "Location")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());
     }
