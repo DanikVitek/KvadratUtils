@@ -5,6 +5,8 @@
 *.ipr
 *.iws
 
+MineSkin API.yaml
+
 # IntelliJ
 out/
 

@@ -112,11 +112,15 @@ public final class Main extends JavaPlugin implements Listener {
 
         TPMenuCommand tpMenuCommand = new TPMenuCommand();
         Bukkit.getPluginManager().registerEvents(tpMenuCommand, this);
-        getCommand("tp_menu").setExecutor(tpMenuCommand);
+        Objects.requireNonNull(getCommand("tp_menu")).setExecutor(tpMenuCommand);
 
-        getCommand("menus").setExecutor(new MenusCommand());
-        getCommand("skin_select").setExecutor(new SkinSelectCommand());
-        getCommand("manage_permissions").setExecutor(new ManagePermissionsCommand());
+        SkinSelectCommand skinSelectCommand = new SkinSelectCommand();
+        Bukkit.getPluginManager().registerEvents(skinSelectCommand, this);
+        Objects.requireNonNull(getCommand("skin_select")).setExecutor(skinSelectCommand);
+
+        Objects.requireNonNull(getCommand("skin")).setExecutor(new SkinCommand());
+        Objects.requireNonNull(getCommand("menus")).setExecutor(new MenusCommand());
+        Objects.requireNonNull(getCommand("manage_permissions")).setExecutor(new ManagePermissionsCommand());
 
         // Database
         MysqlConnectionPoolDataSource mcpDataSource = new MysqlConnectionPoolDataSource();
@@ -160,12 +164,6 @@ public final class Main extends JavaPlugin implements Listener {
                         luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
                     if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
                         luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
-//                    for (Player otherPlayer: Bukkit.getOnlinePlayers()) {
-//                        if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + otherPlayer.getName()))
-//                            luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + otherPlayer.getName()).value(true).build()));
-//                        if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + otherPlayer.getName()))
-//                            luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + otherPlayer.getName()).value(true).build()));
-//                    }
                 }
             }.runTaskAsynchronously(this);
         }
@@ -194,16 +192,6 @@ public final class Main extends JavaPlugin implements Listener {
                     luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
                 if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
                     luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
-//                for (Player otherPlayer: Bukkit.getOnlinePlayers()) {
-//                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + otherPlayer.getName()))
-//                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + otherPlayer.getName()).value(true).build()));
-//                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + otherPlayer.getName()))
-//                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + otherPlayer.getName()).value(true).build()));
-//                    if (!luckPermsAPI.getUserManager().getUser(otherPlayer.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_player." + player.getName()))
-//                        luckPermsAPI.getUserManager().modifyUser(otherPlayer.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_player." + player.getName()).value(true).build()));
-//                    if (!luckPermsAPI.getUserManager().getUser(otherPlayer.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.teleport_to_player." + player.getName()))
-//                        luckPermsAPI.getUserManager().modifyUser(otherPlayer.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.teleport_to_player." + player.getName()).value(true).build()));
-//                }
             }
         }.runTaskAsynchronously(this);
     }
@@ -329,10 +317,10 @@ public final class Main extends JavaPlugin implements Listener {
 
     private static void createSkinsTable() throws SQLException {
         String createTableQuery = new QueryBuilder().createTable(skinsTableName)
-                .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
                 .addAttribute("Name", "VARCHAR(256) NOT NULL")
-                .addAttribute("Skin", "JSON NOT NULL")
-                .setPrimaryKeys("ID")
+                .addAttribute("Skin_Value", "BLOB NOT NULL")
+                .addAttribute("Skin_Signature", "BLOB NOT NULL")
+                .setPrimaryKeys("Name")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());
     }

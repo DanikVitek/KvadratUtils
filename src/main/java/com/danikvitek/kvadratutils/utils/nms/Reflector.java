@@ -1,17 +1,13 @@
 package com.danikvitek.kvadratutils.utils.nms;
 
-//import net.minecraft.server.v1_16_R3.*;
-import net.minecraft.server.v1_16_R3.*;
-import org.bukkit.block.Block;
-//import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-//import org.bukkit.craftbukkit.v1_16_R3.block.CraftCommandBlock;
-//import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R3.block.CraftCommandBlock;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
+import com.google.gson.JsonObject;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
+import java.lang.reflect.InvocationTargetException;
 
 public class Reflector {
     private static final byte STATUS_BYTE = 28; // status byte of OP lever 4
@@ -41,13 +37,9 @@ public class Reflector {
     // "b"
     protected String playerConnectionField;
 
-//    protected Class<?> craftCommandBlock;
-//
-//    protected Class<?> ;
-
     public Reflector() {}
 
-    public void sendPseudoOPStatus(Player player) {
+    public void sendPseudoOPStatus(@NotNull Player player) {
         try {
             Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
             Object playerConnection = entityPlayer.getClass().getDeclaredField(this.playerConnectionField).get(entityPlayer);
@@ -58,18 +50,16 @@ public class Reflector {
         }
     }
 
-//    public void sendOpenCBGUI(Player player, Block commandBlock) {
-//        ((BlockCommand) ((CraftCommandBlock) commandBlock.getState()).getHandle().getBlock()).interact(
-//                ((CraftCommandBlock) commandBlock.getState()).getHandle(),
-//                ((CraftWorld) Objects.requireNonNull(commandBlock.getLocation().getWorld())).getHandle(),
-//                new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
-//                ((CraftPlayer) player).getHandle(),
-//                EnumHand.MAIN_HAND,
-//                MovingObjectPositionBlock.a(
-//                        new Vec3D(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ()),
-//                        EnumDirection.UP,
-//                        new BlockPosition(commandBlock.getX(), commandBlock.getY(), commandBlock.getZ())
-//                )
-//        );
-//    }
+    public void setSkin(@NotNull Player player, @NotNull String value, @NotNull String signature) {
+        try {
+            Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
+            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getDeclaredMethod("getProfile").invoke(entityPlayer);
+            PropertyMap propertyMap = gameProfile.getProperties();
+            Property property = propertyMap.get("textures").iterator().next();
+            propertyMap.remove("textures", property);
+            propertyMap.put("textures", new Property("textures", value, signature));
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+    }
 }

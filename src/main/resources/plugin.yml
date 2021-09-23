@@ -35,6 +35,9 @@ commands:
       - ss
     description: Открывает меню выбора скина
     usage: "/skin_select, /ss"
+  skin:
+    description: "Установка или сохранение определённого скина"
+    usage: "/skin <set <title> [player]> | <save <title> <image_url> [is_slim]>"
   tp_menu:
     permission: kvadratutils.command.tp_menu
     aliases:
@@ -73,6 +76,7 @@ permissions:
     default: false
   kvadratutils.command.menus:
     default: op
+
   kvadratutils.command.tp_menu:
     default: false
   kvadratutils.teleport_to_player.*:
@@ -87,3 +91,16 @@ permissions:
   kvadratutils.not_teleport_to:
     default: false
     description: Блокировка телепорта к себе
+
+  kvadratutils.command.skin_select:
+    default: op
+    description: Открывает меню выбора скина
+  kvadratutils.command.skin.*:
+    children:
+      - kvadratutils.command.skin.save
+      - kvadratutils.command.skin.set
+    default: op
+  kvadratutils.command.skin.save:
+    default: op
+  kvadratutils.command.skin.set:
+    default: op
