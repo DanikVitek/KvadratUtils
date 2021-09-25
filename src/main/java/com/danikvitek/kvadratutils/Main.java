@@ -11,6 +11,8 @@ import com.danikvitek.kvadratutils.utils.nms.Reflector_1_8;
 import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
 import io.papermc.lib.PaperLib;
 import net.luckperms.api.LuckPerms;
+import net.luckperms.api.event.node.NodeAddEvent;
+import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.PermissionNode;
 import org.bukkit.Bukkit;
@@ -48,13 +50,12 @@ public final class Main extends JavaPlugin implements Listener {
 
     private static File entityManagerFile;
     private static YamlConfiguration modifyEntityManagerFile;
-    private static File CBLocationsFile;
-    private static YamlConfiguration modifyCBLocationsFile;
 
     private static DataSource dataSource;
     public static final String worldsTableName = "worlds";
     public static final String cbTableName = "command_blocks";
     public static final String skinsTableName = "skins";
+    public static final String skinRelationTableName = "skin_relations";
 
     public static Reflector getReflector() {
         return reflector;
@@ -65,16 +66,6 @@ public final class Main extends JavaPlugin implements Listener {
     }
     public static YamlConfiguration getModifyEntityManagerFile() {
         return modifyEntityManagerFile;
-    }
-
-    public static File getCBLocationsFile() {
-        return CBLocationsFile;
-    }
-    public static YamlConfiguration getModifyCBLocationsFile() {
-        return modifyCBLocationsFile;
-    }
-    public static void setModifyCBLocationsFile(YamlConfiguration modifyCBLocationsFile) {
-        Main.modifyCBLocationsFile = modifyCBLocationsFile;
     }
 
     public static LuckPerms getLuckPermsAPI() {
@@ -118,7 +109,10 @@ public final class Main extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(skinSelectCommand, this);
         Objects.requireNonNull(getCommand("skin_select")).setExecutor(skinSelectCommand);
 
-        Objects.requireNonNull(getCommand("skin")).setExecutor(new SkinCommand());
+        SkinCommand skinCommand = new SkinCommand();
+        Bukkit.getPluginManager().registerEvents(skinCommand, this);
+        Objects.requireNonNull(getCommand("skin")).setExecutor(skinCommand);
+
         Objects.requireNonNull(getCommand("menus")).setExecutor(new MenusCommand());
         Objects.requireNonNull(getCommand("manage_permissions")).setExecutor(new ManagePermissionsCommand());
 
@@ -136,19 +130,17 @@ public final class Main extends JavaPlugin implements Listener {
         }
 
         // Create tables
-        try {
-            initTables();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        initTables();
 
         // Multi-version
         try {
             reflector = new Reflector_1_8();
         } catch (ClassNotFoundException | NoClassDefFoundError e1) {
             try {
+                System.out.println(e1.getMessage());
                 reflector = new Reflector_1_17();
             } catch (ClassNotFoundException | NoClassDefFoundError e2) {
+                System.out.println(e2.getMessage());
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Не удалось загрузить плагин для этой версии (" + Bukkit.getVersion() + ")");
                 Bukkit.getPluginManager().disablePlugin(this);
             }
@@ -167,6 +159,21 @@ public final class Main extends JavaPlugin implements Listener {
                 }
             }.runTaskAsynchronously(this);
         }
+
+        luckPermsAPI.getEventBus().subscribe(
+                this,
+                NodeAddEvent.class,
+                event -> {
+                    if (event.getNode() instanceof PermissionNode) {
+                        PermissionNode permissionNode = (PermissionNode) event.getNode();
+                        if (permissionNode.getPermission().equals("kvadratutils.f3n_f3f4") && event.isUser()) {
+                            if (permissionNode.getValue())
+                                reflector.sendPseudoOPStatus(Objects.requireNonNull(Bukkit.getPlayer(((User) event.getTarget()).getUniqueId())));
+                            else
+                                reflector.sendPseudoDeOPStatus(Objects.requireNonNull(Bukkit.getPlayer(((User) event.getTarget()).getUniqueId())));
+                        }
+                    }
+                });
     }
 
     private void initFiles() throws IOException {
@@ -262,13 +269,14 @@ public final class Main extends JavaPlugin implements Listener {
     }
 
 
-    private static void initTables() throws SQLException {
+    private static void initTables() {
         createWorldsTable();
         createCBTable();
         createSkinsTable();
+        createSkinsRelationTable();
     }
 
-    private static void createWorldsTable() throws SQLException {
+    private static void createWorldsTable() {
         String createTableQuery = new QueryBuilder().createTable(worldsTableName)
                 .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
                 .addAttribute("UUID", "BINARY(16) NOT NULL")
@@ -304,7 +312,7 @@ public final class Main extends JavaPlugin implements Listener {
                 null);
     }
 
-    private static void createCBTable() throws SQLException {
+    private static void createCBTable() {
         String createTableQuery = new QueryBuilder().createTable(cbTableName)
 //                .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
                 .addAttribute("World_ID", "INT NOT NULL")
@@ -315,12 +323,21 @@ public final class Main extends JavaPlugin implements Listener {
         makeExecute(createTableQuery, new HashMap<>());
     }
 
-    private static void createSkinsTable() throws SQLException {
+    private static void createSkinsTable() {
         String createTableQuery = new QueryBuilder().createTable(skinsTableName)
                 .addAttribute("Name", "VARCHAR(256) NOT NULL")
                 .addAttribute("Skin_Value", "BLOB NOT NULL")
                 .addAttribute("Skin_Signature", "BLOB NOT NULL")
                 .setPrimaryKeys("Name")
+                .build();
+        makeExecute(createTableQuery, new HashMap<>());
+    }
+
+    private static void createSkinsRelationTable() {
+        String createTableQuery = new QueryBuilder().createTable(skinRelationTableName)
+                .addAttribute("Player", "BINARY(16) NOT NULL")
+                .addAttribute("Skin_Name", "VARCHAR(256)")
+                .setPrimaryKeys("Player")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());
     }

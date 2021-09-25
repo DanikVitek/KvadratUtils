@@ -36,8 +36,8 @@ commands:
     description: Открывает меню выбора скина
     usage: "/skin_select, /ss"
   skin:
-    description: "Установка или сохранение определённого скина"
-    usage: "/skin <set <title> [player]> | <save <title> <image_url> [is_slim]>"
+    description: "Установка, сохранение, срос или удаление скина"
+    usage: "/skin <set <title> [player]> | <save <title> <image_url> [is_slim]> | <reset [player]> | <delete <title>>"
   tp_menu:
     permission: kvadratutils.command.tp_menu
     aliases:
@@ -66,6 +66,7 @@ permissions:
       - kvadratutils.command.manage_permissions
       - kvadratutils.teleport_to_player.*
       - kvadratutils.teleport_player.*
+      - kvadratutils.command.skin.*
   kvadratutils.f3n_f3f4:
     default: false
   kvadratutils.command.manage:
@@ -99,8 +100,26 @@ permissions:
     children:
       - kvadratutils.command.skin.save
       - kvadratutils.command.skin.set
+      - kvadratutils.command.skin.set.others
+      - kvadratutils.command.skin.reset
+      - kvadratutils.command.skin.reset.others
+      - kvadratutils.command.skin.delete
     default: op
   kvadratutils.command.skin.save:
     default: op
+    description: Разрешает сохранять новые скины в базу данных
   kvadratutils.command.skin.set:
+    default: true
+    description: Разрешает ставить скины себе
+  kvadratutils.command.skin.set.others:
     default: op
+    description: Разрешает ставить скины другим игрокам
+  kvadratutils.command.skin.reset:
+    default: true
+    description: Разрешает сбрасывать скины себе
+  kvadratutils.command.skin.reset.others:
+    default: op
+    description: Разрешает сбрасывать скины другим игрокам
+  kvadratutils.command.skin.delete:
+    default: op
+    description: Разрешает удалять скины из базы данных

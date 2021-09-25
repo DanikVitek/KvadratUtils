@@ -10,5 +10,21 @@ public class Reflector_1_8 extends Reflector {
         this.entityClass = Class.forName("net.minecraft.server." + namespace + ".Entity");
         this.packetClass = Class.forName("net.minecraft.server." + namespace + ".Packet");
         this.playerConnectionField = "playerConnection";
+
+        this.playerInfoPacketClass = Class.forName("net.minecraft.server." + namespace + ".PacketPlayOutPlayerInfo");
+        this.enumPlayerInfoActionClass = Class.forName("net.minecraft.server." + namespace + ".PacketPlayOutPlayerInfo").getClasses()[1]; // .EnumPlayerInfoAction
+        this.respawnPacketClass = Class.forName("net.minecraft.server." + namespace + ".PacketPlayOutRespawn");
+        this.dimensionManagerClass = Class.forName("net.minecraft.server." + namespace + ".DimensionManager");
+        this.enumDifficultyClass = Class.forName("net.minecraft.server." + namespace + ".EnumDifficulty");
+        this.enumGamemodeClass = Class.forName("net.minecraft.server." + namespace + ".EnumGamemode");
+        this.resourceKeyClass = Class.forName("net.minecraft.server." + namespace + ".ResourceKey");
+        this.worldDataClass = Class.forName("net.minecraft.server." + namespace + ".WorldData");
+        this.worldClass = Class.forName("net.minecraft.server." + namespace + ".World");
+        this.worldServerClass = Class.forName("net.minecraft.server." + namespace + ".WorldServer");
+        // only pre-16
+        if (Integer.parseInt(namespace.split("_")[1]) < 16)
+            this.worldTypeClass = Class.forName("net.minecraft.server." + namespace + ".WorldType");
+        else
+            this.worldTypeClass = null;
     }
 }

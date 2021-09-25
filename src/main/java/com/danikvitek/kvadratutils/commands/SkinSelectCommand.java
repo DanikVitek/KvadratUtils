@@ -36,8 +36,8 @@ public class SkinSelectCommand implements CommandExecutor, Listener {
 
     }
 
-    private void setSkin(@NotNull Player player, @NotNull String value, @NotNull String signature) {
-        Main.getReflector().setSkin(player, value, signature);
+    private void setSkin(@NotNull Player player, @NotNull String title) {
+        Main.getReflector().setSkin(player, title);
     }
 
     private String toBase64(String s) {
