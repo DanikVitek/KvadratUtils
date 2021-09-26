@@ -70,27 +70,27 @@ permissions:
   kvadratutils.f3n_f3f4:
     default: false
   kvadratutils.command.manage:
-    default: false
+    default: op
   kvadratutils.command.command_blocks:
-    default: false
+    default: op
   kvadratutils.command.entity_manager:
-    default: false
+    default: op
   kvadratutils.command.menus:
     default: op
 
   kvadratutils.command.tp_menu:
-    default: false
+    default: op
   kvadratutils.teleport_to_player.*:
     default: true
     description: Разрешение телепортации к конкретному игроку
   kvadratutils.teleport_player.*:
     default: true
     description: Разрешение телепортации конкретного игрока
-  kvadratutils.not_teleport:
-    default: false
+  kvadratutils.can_teleport:
+    default: true
     description: Блокировка телепорта себя к другим
-  kvadratutils.not_teleport_to:
-    default: false
+  kvadratutils.can_teleport_to:
+    default: true
     description: Блокировка телепорта к себе
 
   kvadratutils.command.skin_select:
@@ -112,12 +112,16 @@ permissions:
     default: true
     description: Разрешает ставить скины себе
   kvadratutils.command.skin.set.others:
+    children:
+      - kvadratutils.command.skin.set
     default: op
     description: Разрешает ставить скины другим игрокам
   kvadratutils.command.skin.reset:
     default: true
     description: Разрешает сбрасывать скины себе
   kvadratutils.command.skin.reset.others:
+    children:
+      - kvadratutils.command.skin.reset
     default: op
     description: Разрешает сбрасывать скины другим игрокам
   kvadratutils.command.skin.delete:

@@ -2,7 +2,10 @@ package com.danikvitek.kvadratutils.commands;
 
 import com.danikvitek.kvadratutils.Main;
 import com.danikvitek.kvadratutils.utils.ItemBuilder;
-import com.danikvitek.kvadratutils.utils.gui.*;
+import com.danikvitek.kvadratutils.utils.gui.Button;
+import com.danikvitek.kvadratutils.utils.gui.ControlButtons;
+import com.danikvitek.kvadratutils.utils.gui.Menu;
+import com.danikvitek.kvadratutils.utils.gui.PageUtil;
 import net.luckperms.api.node.types.PermissionNode;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -14,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
@@ -128,7 +130,6 @@ public class ManagePermissionsCommand implements CommandExecutor {
                 }
 
                 private void setToggleControls(Menu permissionsMenu) {
-                    // todo: implement LuckPerms
                     List<String> permissions = PageUtil.getPageItems(getPermissionIcons(), page, 9)
                             .stream().map(ItemStack::getItemMeta).map(m -> {
                                 assert m != null;
@@ -166,7 +167,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                         @Override
                         public void onClick(Menu menu, InventoryClickEvent event) {
                             event.setCancelled(true);
-                            for (String permission : PageUtil.getPageItems(getPermissionIcons(), page, 9)
+                            for (String permission : getPermissionIcons()
                                     .stream().map(ItemStack::getItemMeta).map(m -> {
                                         assert m != null;
                                         return m.getLore();
@@ -190,7 +191,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                         @Override
                         public void onClick(Menu menu, InventoryClickEvent event) {
                             event.setCancelled(true);
-                            for (String permission : PageUtil.getPageItems(getPermissionIcons(), page, 9)
+                            for (String permission : getPermissionIcons()
                                     .stream().map(ItemStack::getItemMeta).map(m -> {
                                         assert m != null;
                                         return m.getLore();
@@ -219,11 +220,17 @@ public class ManagePermissionsCommand implements CommandExecutor {
                             new ItemBuilder(Material.GRASS_BLOCK).setDisplayName(ChatColor.GOLD + "использовать /gamemode").setLore("", ChatColor.YELLOW + "minecraft.command.gamemode").build(),
                             new ItemBuilder(Material.BEE_SPAWN_EGG).setDisplayName(ChatColor.GOLD + "Менеджер сущностей").setLore("", ChatColor.YELLOW + "kvadratutils.command.entity_manager").build(),
                             new ItemBuilder(Material.COMMAND_BLOCK).setDisplayName(ChatColor.GOLD + "Менеджер командных блоков").setLore("", ChatColor.YELLOW + "kvadratutils.command.command_blocks").build(),
-                            new ItemBuilder(MenusCommand.getPlayerHead()).setDisplayName(ChatColor.GOLD + "Установка скинов").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin_select").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Меню выбора скинов").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin_select").build(),
                             new ItemBuilder(Material.ENDER_PEARL).setDisplayName(ChatColor.GOLD + "Меню телепортации").setLore("", ChatColor.YELLOW + "kvadratutils.command.tp_menu").build(),
                             new ItemBuilder(Material.PLAYER_HEAD).setOwner("MHF_ArrowDown").setDisplayName(ChatColor.GOLD + "Телепортация к тебе").setLore("", ChatColor.YELLOW + "kvadratutils.teleport_to_player." + player.getName()).build(),
                             new ItemBuilder(Material.PLAYER_HEAD).setOwner("MHF_ArrowUp").setDisplayName(ChatColor.GOLD + "Телепортация тебя").setLore("", ChatColor.YELLOW + "kvadratutils.teleport_player." + player.getName()).build(),
                             new ItemBuilder(Material.WRITABLE_BOOK).setDisplayName(ChatColor.GOLD + "Менеджер разрешений").setLore("", ChatColor.YELLOW + "kvadratutils.command.manage_permissions").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set.others").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset.others").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сохранять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.save").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Удалять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.delete").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Одевать на голову блоки").setLore("", ChatColor.YELLOW + "hat.blocks").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Одевать на голову предметы").setLore("", ChatColor.YELLOW + "hat.items").build(),
                             new ItemBuilder(Material.PHANTOM_MEMBRANE).setDisplayName(ChatColor.GOLD + "Открывать /cmenu").setLore("", ChatColor.YELLOW + "cmenu.show").build()

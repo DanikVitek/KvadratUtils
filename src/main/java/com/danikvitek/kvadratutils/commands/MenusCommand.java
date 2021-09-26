@@ -24,6 +24,12 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class MenusCommand implements CommandExecutor {
+    public static final ItemStack SKIN_MENU_BUTTON;
+
+    static {
+        SKIN_MENU_BUTTON = getPlayerHead();
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (sender instanceof Player) {
@@ -55,7 +61,7 @@ public class MenusCommand implements CommandExecutor {
                     }
                 });
 
-                menusMenu.setButton(22, new Button(getPlayerHead()) {
+                menusMenu.setButton(22, new Button(SKIN_MENU_BUTTON.clone()) {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
@@ -98,9 +104,9 @@ public class MenusCommand implements CommandExecutor {
         return true;
     }
 
-    public static ItemStack getPlayerHead() {
-        ItemStack setSkinPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Установить скин").build();
-        SkullMeta meta = (SkullMeta) setSkinPlayerHead.getItemMeta();
+    private static ItemStack getPlayerHead() {
+        ItemStack skinSelectPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Установить скин").build();
+        SkullMeta meta = (SkullMeta) skinSelectPlayerHead.getItemMeta();
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);
         profile.getProperties().put("textures", new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTYzMTc5ODQwNTUzMiwKICAicHJvZmlsZUlkIiA6ICI4MGFiMWFkMTgyMzU0NDFkYjhlYTMzNzQ2OTZkMWU0YSIsCiAgInByb2ZpbGVOYW1lIiA6ICJWZW50b3JfUHJveHkiLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDViMWVlYmIwNWE3MWY0NmM2ZjY2OTBmNjk5NzU1NTExMWQ5ZWQ1YzViZTFlNjgyODk0NDZkMTg5ZjdlMWFiYyIKICAgIH0KICB9Cn0="));
 
@@ -114,8 +120,8 @@ public class MenusCommand implements CommandExecutor {
             e.printStackTrace();
         }
 
-        setSkinPlayerHead.setItemMeta(meta);
+        skinSelectPlayerHead.setItemMeta(meta);
 
-        return setSkinPlayerHead;
+        return skinSelectPlayerHead;
     }
 }

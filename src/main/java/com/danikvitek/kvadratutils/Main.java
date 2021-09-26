@@ -106,7 +106,7 @@ public final class Main extends JavaPlugin implements Listener {
         Objects.requireNonNull(getCommand("tp_menu")).setExecutor(tpMenuCommand);
 
         SkinSelectCommand skinSelectCommand = new SkinSelectCommand();
-        Bukkit.getPluginManager().registerEvents(skinSelectCommand, this);
+//        Bukkit.getPluginManager().registerEvents(skinSelectCommand, this);
         Objects.requireNonNull(getCommand("skin_select")).setExecutor(skinSelectCommand);
 
         SkinCommand skinCommand = new SkinCommand();

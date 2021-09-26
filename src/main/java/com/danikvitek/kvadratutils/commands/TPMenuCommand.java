@@ -18,16 +18,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TPMenuCommand implements CommandExecutor, Listener {
@@ -108,14 +107,14 @@ public class TPMenuCommand implements CommandExecutor, Listener {
         for (int i = 0; i < 9; i++) {
             Player subjectPlayer = i < pageHeads.size() ? Bukkit.getPlayer(Objects.requireNonNull(pageHeads.get(i).getItemMeta()).getDisplayName()) : null;
             teleportMenu.setButton(i + 9, new Button(i < pageHeads.size()
-                    ? new ItemBuilder(Objects.requireNonNull(subjectPlayer).hasPermission("kvadratutils.not_teleport_to") || !player.hasPermission("kvadratutils.teleport_to_player." + subjectPlayer.getName())
-                            ? Material.LIGHT_GRAY_WOOL
-                            : Material.CYAN_WOOL).setDisplayName(ChatColor.AQUA + "Телепортироваться к " + subjectPlayer.getName()).build()
+                    ? new ItemBuilder(Objects.requireNonNull(subjectPlayer).hasPermission("kvadratutils.can_teleport_to") && player.hasPermission("kvadratutils.teleport_to_player." + subjectPlayer.getName())
+                            ? Material.CYAN_WOOL
+                            : Material.LIGHT_GRAY_WOOL).setDisplayName(ChatColor.AQUA + "Телепортироваться к " + subjectPlayer.getName()).build()
                     : null) {
                 @Override
                 public void onClick(Menu menu, InventoryClickEvent event) {
                     event.setCancelled(true);
-                    if (subjectPlayer != null && !subjectPlayer.hasPermission("kvadratutils.not_teleport_to") && player.hasPermission("kvadratutils.teleport_to_player." + subjectPlayer.getName())) {
+                    if (subjectPlayer != null && subjectPlayer.hasPermission("kvadratutils.can_teleport_to") && player.hasPermission("kvadratutils.teleport_to_player." + subjectPlayer.getName())) {
                         PlayerTeleportMenuEvent playerTeleportMenuEvent = new PlayerTeleportMenuEvent(player, subjectPlayer, false, PlayerTeleportEvent.TeleportCause.PLUGIN);
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
                         if (!playerTeleportMenuEvent.isCancelled()) {
@@ -126,14 +125,14 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                 }
             });
             teleportMenu.setButton(i + 18, new Button(i < pageHeads.size()
-                    ? new ItemBuilder(Objects.requireNonNull(subjectPlayer).hasPermission("kvadratutils.not_teleport") || !player.hasPermission("kvadratutils.teleport_player." + subjectPlayer.getName())
-                            ? Material.GRAY_WOOL
-                            : Material.BLUE_WOOL).setDisplayName(ChatColor.DARK_AQUA + "Телепортировать " + subjectPlayer.getName() + " к себе").build()
+                    ? new ItemBuilder(Objects.requireNonNull(subjectPlayer).hasPermission("kvadratutils.can_teleport") && player.hasPermission("kvadratutils.teleport_player." + subjectPlayer.getName())
+                            ? Material.BLUE_WOOL
+                            : Material.GRAY_WOOL).setDisplayName(ChatColor.DARK_AQUA + "Телепортировать " + subjectPlayer.getName() + " к себе").build()
                     : null) {
                 @Override
                 public void onClick(Menu menu, InventoryClickEvent event) {
                     event.setCancelled(true);
-                    if (subjectPlayer != null && !subjectPlayer.hasPermission("kvadratutils.not_teleport") && player.hasPermission("kvadratutils.teleport_player." + subjectPlayer.getName())) {
+                    if (subjectPlayer != null && subjectPlayer.hasPermission("kvadratutils.can_teleport") && player.hasPermission("kvadratutils.teleport_player." + subjectPlayer.getName())) {
                         PlayerTeleportMenuEvent playerTeleportMenuEvent = new PlayerTeleportMenuEvent(subjectPlayer, player, true, PlayerTeleportEvent.TeleportCause.PLUGIN);
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
                         if (!playerTeleportMenuEvent.isCancelled())
@@ -142,13 +141,13 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                 }
             });
         }
-        teleportMenu.setButton(30, new Button(new ItemBuilder(player.hasPermission("kvadratutils.not_teleport_to")
-                ? Material.GRAY_STAINED_GLASS_PANE
-                : Material.CYAN_STAINED_GLASS_PANE).setDisplayName(ChatColor.AQUA + "Блокировка телепорта к себе").build()) {
+        teleportMenu.setButton(30, new Button(new ItemBuilder(player.hasPermission("kvadratutils.can_teleport_to")
+                ? Material.CYAN_STAINED_GLASS_PANE
+                : Material.GRAY_STAINED_GLASS_PANE).setDisplayName(ChatColor.AQUA + "Блокировка телепорта к себе").build()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                Main.getLuckPermsAPI().getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(!player.hasPermission("kvadratutils.not_teleport_to")).build()));
+                Main.getLuckPermsAPI().getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.can_teleport_to").value(!player.hasPermission("kvadratutils.can_teleport_to")).build()));
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -157,13 +156,13 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                 }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
-        teleportMenu.setButton(32, new Button(new ItemBuilder(player.hasPermission("kvadratutils.not_teleport")
-                ? Material.BLACK_STAINED_GLASS_PANE
-                : Material.BLUE_STAINED_GLASS_PANE).setDisplayName(ChatColor.DARK_AQUA + "Блокировка телепорта себя к другим").build()) {
+        teleportMenu.setButton(32, new Button(new ItemBuilder(player.hasPermission("kvadratutils.can_teleport")
+                ? Material.BLUE_STAINED_GLASS_PANE
+                : Material.BLACK_STAINED_GLASS_PANE).setDisplayName(ChatColor.DARK_AQUA + "Блокировка телепорта себя к другим").build()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                Main.getLuckPermsAPI().getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(!player.hasPermission("kvadratutils.not_teleport")).build()));
+                Main.getLuckPermsAPI().getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.can_teleport").value(!player.hasPermission("kvadratutils.can_teleport")).build()));
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -182,17 +181,46 @@ public class TPMenuCommand implements CommandExecutor, Listener {
 
     @EventHandler
     public void onMenuTeleport(PlayerTeleportMenuEvent event) {
-        if (event.isForced()) {
+        if (event.isForced()) { // destination teleports target to itself
             Player target = event.getTarget(),
                    destination = event.getDestination();
-            if (target.hasPermission("kvadratutils.not_teleport") || !destination.hasPermission("kvadratutils.teleport_player." + target.getName()))
+            if (!target.hasPermission("kvadratutils.can_teleport") || !destination.hasPermission("kvadratutils.teleport_player." + target.getName()))
                 event.setCancelled(true);
         }
-        else {
+        else { // target teleports itself to destination
             Player target = event.getTarget(),
                    destination = event.getDestination();
-            if (destination.hasPermission("kvadratutils.not_teleport_to") || !target.hasPermission("kvadratutils.teleport_to_player." + destination.getName()))
+            if (!destination.hasPermission("kvadratutils.can_teleport_to") || !target.hasPermission("kvadratutils.teleport_to_player." + destination.getName()))
                 event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onTPCommand(PlayerCommandPreprocessEvent event) {
+        String command = event.getMessage();
+        List<String> words = Arrays.asList(command.split(" "));
+        if (words.get(0).equals("/teleport") || words.get(0).equals("/tp")) {
+            List<String> args = words.subList(1, words.size());
+            if (args.size() == 1) { // target teleports itself to destination
+                Player target = event.getPlayer(),
+                       destination = Bukkit.getPlayer(args.get(0));
+                if (destination != null && (!destination.hasPermission("kvadratutils.can_teleport_to") || !target.hasPermission("kvadratutils.teleport_to_player." + destination.getName())))
+                    event.setCancelled(true);
+            }
+            else if (args.size() == 2) {
+                Player target = Bukkit.getPlayer(args.get(0)),
+                       destination = Bukkit.getPlayer(args.get(1));
+                if (target != null && destination != null) {
+                    if (Objects.equals(event.getPlayer(), target)) { // target teleports itself to destination
+                        if (!destination.hasPermission("kvadratutils.can_teleport_to") || !target.hasPermission("kvadratutils.teleport_to_player." + destination.getName()))
+                            event.setCancelled(true);
+                    }
+                    else if (Objects.equals(event.getPlayer(), destination)) { // destination teleports target to itself
+                        if (!target.hasPermission("kvadratutils.can_teleport") || !destination.hasPermission("kvadratutils.teleport_player." + target.getName()))
+                            event.setCancelled(true);
+                    }
+                }
+            }
         }
     }
 }
