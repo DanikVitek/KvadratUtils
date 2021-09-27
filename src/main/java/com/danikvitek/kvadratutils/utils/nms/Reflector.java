@@ -6,6 +6,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -124,8 +125,10 @@ public class Reflector {
                     return null;
                 }, null);
 
-        if (value.get() != null && signature.get() != null)
+        if (value.get() != null && signature.get() != null) {
             setSkin(player, value.get(), signature.get());
+            player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
+        }
         else
             throw new IllegalArgumentException("Wrong skin title");
     }
@@ -259,5 +262,19 @@ public class Reflector {
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
         }
+    }
+
+    public Property getTextureProperty(Player player) {
+        Property property = null;
+        try {
+            Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
+            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getSuperclass().getDeclaredMethod("getProfile").invoke(entityPlayer);
+            PropertyMap propertyMap = gameProfile.getProperties();
+            property = propertyMap.get("textures").iterator().next();
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+
+        return property;
     }
 }

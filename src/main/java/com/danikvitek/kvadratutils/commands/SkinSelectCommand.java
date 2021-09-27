@@ -3,7 +3,10 @@ package com.danikvitek.kvadratutils.commands;
 import com.danikvitek.kvadratutils.Main;
 import com.danikvitek.kvadratutils.utils.ItemBuilder;
 import com.danikvitek.kvadratutils.utils.QueryBuilder;
+import com.danikvitek.kvadratutils.utils.gui.Button;
+import com.danikvitek.kvadratutils.utils.gui.ControlButtons;
 import com.danikvitek.kvadratutils.utils.gui.Menu;
+import com.danikvitek.kvadratutils.utils.gui.PageUtil;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
@@ -13,17 +16,16 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class SkinSelectCommand implements CommandExecutor {
     private static final HashMap<UUID, Integer> pages = new HashMap<>();
@@ -37,7 +39,7 @@ public class SkinSelectCommand implements CommandExecutor {
                 Menu skinMenu = new Menu(skinInventory);
                 pages.put(player.getUniqueId(), 0);
 
-                redrawMenu(player, skinMenu);
+                redrawMenu(player, skinMenu, false);
             }
             else
                 player.sendMessage(ChatColor.RED + "Нет прав на использование команды");
@@ -47,17 +49,91 @@ public class SkinSelectCommand implements CommandExecutor {
         return true;
     }
 
-    private static void redrawMenu(Player player, Menu skinMenu) {
-
+    private static void redrawMenu(Player player, Menu skinMenu, boolean reload) {
+        List<ItemStack> skinIcons = getSkinIcons();
+        setSkinIcons(player, skinMenu, skinIcons);
+        setPageControls(player, skinMenu, skinIcons);
+        if (reload)
+            Main.getMenuHandler().reloadMenu(player);
+        else {
+            Main.getMenuHandler().closeMenu(player);
+            Main.getMenuHandler().openMenu(player, skinMenu);
+        }
     }
 
-    private void setSkin(@NotNull Player player, @NotNull String title) {
-        Main.getReflector().setSkin(player, title);
+    private static void setPageControls(Player player, Menu skinMenu, List<ItemStack> skinIcons) {
+        skinMenu.setButton(45, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.put(player.getUniqueId(), pages.get(player.getUniqueId()) <= 0 ? PageUtil.getMaxPages(skinIcons, 45) - 1 : pages.get(player.getUniqueId()) - 1);
+                redrawMenu(player, skinMenu, true);
+            }
+        });
+        skinMenu.setButton(49, new Button(ControlButtons.QUIT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.remove(player.getUniqueId());
+                Main.getMenuHandler().closeMenu(player);
+            }
+        });
+        skinMenu.setButton(53, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                pages.put(player.getUniqueId(), (pages.get(player.getUniqueId()) + 1) % PageUtil.getMaxPages(skinIcons, 45));
+                redrawMenu(player, skinMenu, true);
+            }
+        });
+    }
+
+    private static void setSkinIcons(Player player, Menu skinMenu, List<ItemStack> skinIcons) {
+        List<ItemStack> pageIcons = PageUtil.getPageItems(skinIcons, pages.get(player.getUniqueId()), 45);
+        for (int i = 0; i < pageIcons.size(); i++) {
+            int _i = i;
+            skinMenu.setButton(i, new Button(pageIcons.get(i)) {
+                @Override
+                public void onClick(Menu menu, InventoryClickEvent event) {
+                    event.setCancelled(true);
+                    Main.getMenuHandler().closeMenu(player);
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            String title = Objects.requireNonNull(pageIcons.get(_i).getItemMeta()).getDisplayName();
+                            Main.getReflector().setSkin(player, title);
+//                            player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
+                        }
+                    }.runTaskAsynchronously(Main.getPlugin(Main.class));
+                }
+            });
+        }
+        skinMenu.setButton(48, new Button(new ItemBuilder(Material.CACTUS).setDisplayName("Сбросить скин").build()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        SkinCommand.resetSkinRelation(player);
+                        player.sendMessage(ChatColor.YELLOW + "Ваш скин был сброшен");
+                    }
+                }.runTaskAsynchronously(Main.getPlugin(Main.class));
+            }
+        });
+        skinMenu.setButton(50, new Button(new ItemBuilder(getCurrentSkinHead(player)).setDisplayName("Текущий скин").build()) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                redrawMenu(player, skinMenu, true);
+            }
+        });
     }
 
     private static List<ItemStack> getSkinIcons() {
         return Main.makeExecuteQuery(
-                new QueryBuilder().select(Main.skinsTableName).what("*").from().build(),
+                new QueryBuilder().select(Main.skinsTableName).what("Name, Skin_Value").from().build(),
                 new HashMap<>(),
                 (args, skinsResultSet) -> {
                     List<ItemStack> result = new ArrayList<>();
@@ -84,5 +160,27 @@ public class SkinSelectCommand implements CommandExecutor {
                 },
                 null
         );
+    }
+
+    private static ItemStack getCurrentSkinHead(Player player) {
+        ItemStack currentSkinHead = new ItemBuilder(Material.PLAYER_HEAD).build();
+        SkullMeta meta = (SkullMeta) currentSkinHead.getItemMeta();
+
+        GameProfile profile = new GameProfile(UUID.randomUUID(), null);
+        Property playerTextureProperty = Main.getReflector().getTextureProperty(player);
+        profile.getProperties().put("textures", playerTextureProperty);
+        Field field;
+        try {
+            assert meta != null;
+            field = meta.getClass().getDeclaredField("profile");
+            field.setAccessible(true);
+            field.set(meta, profile);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        currentSkinHead.setItemMeta(meta);
+
+        return currentSkinHead;
     }
 }

@@ -1,5 +1,6 @@
 package com.danikvitek.kvadratutils;
 
+import com.danikvitek.kvadratutils.command_blocks.CommandBlockLogger;
 import com.danikvitek.kvadratutils.commands.*;
 import com.danikvitek.kvadratutils.utils.Converter;
 import com.danikvitek.kvadratutils.utils.CustomConfigManager;
@@ -8,6 +9,10 @@ import com.danikvitek.kvadratutils.utils.gui.MenuHandler;
 import com.danikvitek.kvadratutils.utils.nms.Reflector;
 import com.danikvitek.kvadratutils.utils.nms.Reflector_1_17;
 import com.danikvitek.kvadratutils.utils.nms.Reflector_1_8;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import com.mojang.authlib.properties.Property;
 import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
 import io.papermc.lib.PaperLib;
 import net.luckperms.api.LuckPerms;
@@ -15,9 +20,7 @@ import net.luckperms.api.event.node.NodeAddEvent;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.PermissionNode;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,18 +30,17 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
+import org.jsoup.Jsoup;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,7 @@ public final class Main extends JavaPlugin implements Listener {
     public static final String worldsTableName = "worlds";
     public static final String cbTableName = "command_blocks";
     public static final String skinsTableName = "skins";
+    public static final String playerSkinsTableName = "player_skins";
     public static final String skinRelationTableName = "skin_relations";
 
     public static Reflector getReflector() {
@@ -149,16 +152,62 @@ public final class Main extends JavaPlugin implements Listener {
         for (Player player: Bukkit.getOnlinePlayers()) {
             if (player.hasPermission("kvadratutils.f3n_f3f4"))
                 reflector.sendPseudoOPStatus(player);
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
-                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
-                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
-                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
-                }
-            }.runTaskAsynchronously(this);
         }
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player: Bukkit.getOnlinePlayers()) {
+                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
+                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
+                    if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
+                        luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u -> u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
+                }
+            }
+        }.runTaskAsynchronously(this);
+
+        Iterator<? extends Player> playerQueue = Bukkit.getOnlinePlayers().iterator();
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (playerQueue.hasNext()) {
+                    Player player = playerQueue.next();
+                    try {
+                        org.jsoup.Connection.Response response = Jsoup
+                                .connect("https://api.mineskin.org/generate/user?name=" + player.getName() + "&uuid=" + player.getUniqueId().toString().replace("-", ""))
+                                .userAgent("kvadratutils")
+                                .method(org.jsoup.Connection.Method.POST)
+                                .ignoreContentType(true)
+                                .ignoreHttpErrors(true)
+                                .timeout(40000)
+                                .execute();
+                        JsonReader reader = new JsonReader(new StringReader(response.body()));
+                        reader.setLenient(true);
+                        JsonObject jsonResponse = new JsonParser().parse(reader).getAsJsonObject();
+
+                        if (response.statusCode() == 200) {
+                            String value = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("value").getAsString(),
+                                    signature = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("signature").getAsString();
+                            HashMap<Integer, byte[]> values = new HashMap<>();
+                            values.put(1, Converter.uuidToBytes(player.getUniqueId()));
+                            values.put(2, Converter.uuidToBytes(player.getUniqueId()));
+                            Main.makeExecuteUpdate(
+                                    new QueryBuilder().insert(Main.playerSkinsTableName)
+                                            .setColumns("Player", "Skin_Value", "Skin_Signature")
+                                            .setValues("?", "'" + value + "'", "'" + signature + "'")
+                                            .onDuplicateKeyUpdate()
+                                            .build(),
+                                    values);
+                        } else
+                            System.out.println(jsonResponse.toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else
+                    cancel();
+            }
+        }.runTaskTimerAsynchronously(this, 0L, 100L);
 
         luckPermsAPI.getEventBus().subscribe(
                 this,
@@ -195,10 +244,20 @@ public final class Main extends JavaPlugin implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
+                if (!Objects.requireNonNull(luckPermsAPI.getUserManager().getUser(player.getUniqueId())).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport"))
                     luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport").value(false).build()));
-                if (!luckPermsAPI.getUserManager().getUser(player.getUniqueId()).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
+                if (!Objects.requireNonNull(luckPermsAPI.getUserManager().getUser(player.getUniqueId())).getNodes(NodeType.PERMISSION).stream().map(PermissionNode::getPermission).collect(Collectors.toList()).contains("kvadratutils.not_teleport_to"))
                     luckPermsAPI.getUserManager().modifyUser(player.getUniqueId(), u->u.data().add(PermissionNode.builder("kvadratutils.not_teleport_to").value(false).build()));
+                Property playerSkin = reflector.getTextureProperty(player);
+                HashMap<Integer, byte[]> values = new HashMap<>();
+                values.put(1, Converter.uuidToBytes(player.getUniqueId()));
+                values.put(2, Converter.uuidToBytes(player.getUniqueId()));
+                makeExecuteUpdate(new QueryBuilder().insert(playerSkinsTableName)
+                                .setColumns("Player", "Skin_Value", "Skin_Signature")
+                                .setValues("?", "'" + playerSkin.getValue() + "'", "'" + playerSkin.getSignature() + "'")
+                                .onDuplicateKeyUpdate()
+                                .build(),
+                        values);
             }
         }.runTaskAsynchronously(this);
     }
@@ -210,6 +269,8 @@ public final class Main extends JavaPlugin implements Listener {
             CommandBlockLogger.newTimeStamp.cancel();
         if (!EntityManagerCommand.removeXPOrbsInChunksTask.isCancelled())
             EntityManagerCommand.removeXPOrbsInChunksTask.cancel();
+        if (!TPMenuCommand.collisionCooldownTask.isCancelled())
+            TPMenuCommand.collisionCooldownTask.cancel();
     }
 
     public static MenuHandler getMenuHandler() {
@@ -273,6 +334,7 @@ public final class Main extends JavaPlugin implements Listener {
         createWorldsTable();
         createCBTable();
         createSkinsTable();
+        createPlayerSkinsTable();
         createSkinsRelationTable();
     }
 
@@ -337,6 +399,16 @@ public final class Main extends JavaPlugin implements Listener {
         String createTableQuery = new QueryBuilder().createTable(skinRelationTableName)
                 .addAttribute("Player", "BINARY(16) NOT NULL")
                 .addAttribute("Skin_Name", "VARCHAR(256)")
+                .setPrimaryKeys("Player")
+                .build();
+        makeExecute(createTableQuery, new HashMap<>());
+    }
+
+    private static void createPlayerSkinsTable() {
+        String createTableQuery = new QueryBuilder().createTable(playerSkinsTableName)
+                .addAttribute("Player", "BINARY(16) NOT NULL")
+                .addAttribute("Skin_Value", "BLOB NOT NULL")
+                .addAttribute("Skin_Signature", "BLOB NOT NULL")
                 .setPrimaryKeys("Player")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());

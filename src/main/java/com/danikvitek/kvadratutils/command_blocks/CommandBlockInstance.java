@@ -1,4 +1,4 @@
-package com.danikvitek.kvadratutils;
+package com.danikvitek.kvadratutils.command_blocks;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

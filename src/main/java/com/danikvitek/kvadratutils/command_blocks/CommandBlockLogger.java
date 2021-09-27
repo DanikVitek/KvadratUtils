@@ -1,5 +1,6 @@
-package com.danikvitek.kvadratutils;
+package com.danikvitek.kvadratutils.command_blocks;
 
+import com.danikvitek.kvadratutils.Main;
 import com.danikvitek.kvadratutils.utils.Converter;
 import com.danikvitek.kvadratutils.utils.QueryBuilder;
 import io.papermc.lib.PaperLib;
@@ -151,10 +152,10 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                 try {
                                     worldResultSet.next();
                                     Main.makeExecuteQuery(new QueryBuilder().select(Main.cbTableName) // select CommandBlock where World_ID = value1 and Location = value2
-                                            .what("*")
-                                            .from()
-                                            .where("World_ID = '" + worldResultSet.getInt(1) + "' AND Location = '" + location + "'")
-                                            .build(),
+                                                    .what("*")
+                                                    .from()
+                                                    .where("World_ID = '" + worldResultSet.getInt(1) + "' AND Location = '" + location + "'")
+                                                    .build(),
                                             new HashMap<>(),
                                             (args1, cbResultSet) -> {
                                                 try {
@@ -162,6 +163,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                                         Main.makeExecuteUpdate(new QueryBuilder().insert(Main.cbTableName) // insert cb in table with world_id and location
                                                                 .setColumns("World_ID", "Location")
                                                                 .setValues("'" + worldResultSet.getInt(1) + "'", "'" + location + "'")
+                                                                .onDuplicateKeyUpdate()
                                                                 .build(), new HashMap<>());
                                                         return true;
                                                     }
@@ -224,7 +226,8 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                                 }
                                             } else return null;
                                         }, null);
-                            } else throw new IllegalArgumentException("Нет командного блока с такими World_ID и Location (" + worldID + ", " + location + ")");
+                            } else
+                                throw new IllegalArgumentException("Нет командного блока с такими World_ID и Location (" + worldID + ", " + location + ")");
                         } catch (SQLException e) {
                             e.printStackTrace();
                             return null;

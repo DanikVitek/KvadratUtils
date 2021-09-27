@@ -35,31 +35,28 @@ import java.util.*;
 
 public class EntityManagerCommand implements CommandExecutor, Listener {
     private static final HashMap<UUID, Byte> pages = new HashMap<>();
-    private final boolean[] entity_spawn = new boolean[31];
-    private final List<String> keys;
+    private static final boolean[] entity_spawn;
+    private static final List<String> keys;
     public static final BukkitTask removeXPOrbsInChunksTask;
 
     static {
+        keys = new ArrayList<>(Main.getModifyEntityManagerFile().getKeys(false));
+        entity_spawn = new boolean[31];
+        for (int i = 0; i < entity_spawn.length; i++)
+            entity_spawn[i] = Main.getModifyEntityManagerFile().getBoolean(keys.get(i));
         removeXPOrbsInChunksTask = new BukkitRunnable() {
             @Override
             public void run() {
-                for (World world: Bukkit.getWorlds())
-                    for (Chunk chunk: world.getLoadedChunks())
-                        for (Entity entity: chunk.getEntities())
-                            try {
-                                if (entity instanceof ExperienceOrb)
-                                    entity.remove();
-                            } catch (NoSuchElementException e) {
-                                continue;
-                            }
+                if (!entity_spawn[23])
+                    for (World world: Bukkit.getWorlds())
+                        for (Chunk chunk: world.getLoadedChunks())
+                            for (Entity entity: chunk.getEntities())
+                                try {
+                                    if (entity instanceof ExperienceOrb)
+                                        entity.remove();
+                                } catch (NoSuchElementException ignored) {}
             }
         }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 1L);
-    }
-
-    public EntityManagerCommand() {
-        keys = new ArrayList<>(Main.getModifyEntityManagerFile().getKeys(false));
-        for (int i = 0; i < entity_spawn.length; i++)
-            entity_spawn[i] = Main.getModifyEntityManagerFile().getBoolean(keys.get(i));
     }
 
     @Override

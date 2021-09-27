@@ -24,6 +24,8 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -31,6 +33,26 @@ import java.util.stream.Collectors;
 
 public class TPMenuCommand implements CommandExecutor, Listener {
     private static final HashMap<UUID, Integer> pages = new HashMap<>();
+    private static final HashMap<UUID, Long> collisionCooldown = new HashMap<>();
+    private static Team notCollidableTeam = Bukkit.getScoreboardManager().getNewScoreboard().registerNewTeam("not_collidable");
+
+    public TPMenuCommand() {
+        notCollidableTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.ALWAYS);
+    }
+
+    public static final BukkitTask collisionCooldownTask = new BukkitRunnable() {
+        @Override
+        public void run() {
+            for (Map.Entry<UUID, Long> entry : collisionCooldown.entrySet()) {
+                if (System.currentTimeMillis() > entry.getValue()) {
+                    Player player = Bukkit.getPlayer(entry.getKey());
+                    if (player != null)
+                        notCollidableTeam.removePlayer(player);
+                    collisionCooldown.remove(entry.getKey());
+                }
+            }
+        }
+    }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 1L);
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -118,6 +140,10 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                         PlayerTeleportMenuEvent playerTeleportMenuEvent = new PlayerTeleportMenuEvent(player, subjectPlayer, false, PlayerTeleportEvent.TeleportCause.PLUGIN);
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
                         if (!playerTeleportMenuEvent.isCancelled()) {
+                            notCollidableTeam.addPlayer(player);
+                            collisionCooldown.put(player.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            notCollidableTeam.addPlayer(subjectPlayer);
+                            collisionCooldown.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + 3000L);
                             player.teleport(subjectPlayer, PlayerTeleportEvent.TeleportCause.PLUGIN);
                             Main.getMenuHandler().closeMenu(player);
                         }
@@ -135,8 +161,13 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                     if (subjectPlayer != null && subjectPlayer.hasPermission("kvadratutils.can_teleport") && player.hasPermission("kvadratutils.teleport_player." + subjectPlayer.getName())) {
                         PlayerTeleportMenuEvent playerTeleportMenuEvent = new PlayerTeleportMenuEvent(subjectPlayer, player, true, PlayerTeleportEvent.TeleportCause.PLUGIN);
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
-                        if (!playerTeleportMenuEvent.isCancelled())
+                        if (!playerTeleportMenuEvent.isCancelled()) {
+                            player.setCollidable(false);
+                            collisionCooldown.put(player.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            subjectPlayer.setCollidable(false);
+                            collisionCooldown.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + 3000L);
                             subjectPlayer.teleport(player, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                        }
                     }
                 }
             });

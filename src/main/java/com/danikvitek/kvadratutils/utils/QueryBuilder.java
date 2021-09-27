@@ -44,13 +44,33 @@ public class QueryBuilder {
     }
 
     public class InsertQuery extends QueryBuilder {
+        String[] columns, values;
+
         public InsertQuery setColumns(String ...columns) {
+            this.columns = columns;
             query.append("(").append(String.join(", ", columns)).append(") ");
             return this;
         }
 
         public InsertQuery setValues(String ...values) {
+            this.values = values;
             query.append("VALUES(").append(String.join(", ", values)).append(")");
+            return this;
+        }
+
+        public InsertQuery onDuplicateKeyUpdate() {
+            query.append(" ON DUPLICATE KEY UPDATE ");
+            for (int i = 0; i < columns.length; i++)
+                query.append(columns[i]).append(" = ").append(values[i]).append(", ");
+            query.delete(query.length() - 2, query.length());
+            return this;
+        }
+
+        public InsertQuery onDuplicateKeyUpdate(String[] columns, String[] values) {
+            query.append(" ON DUPLICATE KEY UPDATE ");
+            for (int i = 0; i < columns.length; i++)
+                query.append(columns[i]).append(" = ").append(values[i]).append(", ");
+            query.delete(query.length() - 2, query.length());
             return this;
         }
 

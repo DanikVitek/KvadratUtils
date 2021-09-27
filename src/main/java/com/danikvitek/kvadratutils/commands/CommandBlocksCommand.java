@@ -1,6 +1,6 @@
 package com.danikvitek.kvadratutils.commands;
 
-import com.danikvitek.kvadratutils.CommandBlockInstance;
+import com.danikvitek.kvadratutils.command_blocks.CommandBlockInstance;
 import com.danikvitek.kvadratutils.Main;
 import com.danikvitek.kvadratutils.utils.ItemBuilder;
 import com.danikvitek.kvadratutils.utils.gui.*;

@@ -231,8 +231,8 @@ public class ManagePermissionsCommand implements CommandExecutor {
                             new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset.others").build(),
                             new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сохранять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.save").build(),
                             new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Удалять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.delete").build(),
-                            new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Одевать на голову блоки").setLore("", ChatColor.YELLOW + "hat.blocks").build(),
-                            new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Одевать на голову предметы").setLore("", ChatColor.YELLOW + "hat.items").build(),
+                            new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову блоки").setLore("", ChatColor.YELLOW + "hat.blocks").build(),
+                            new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову предметы").setLore("", ChatColor.YELLOW + "hat.items").build(),
                             new ItemBuilder(Material.PHANTOM_MEMBRANE).setDisplayName(ChatColor.GOLD + "Открывать /cmenu").setLore("", ChatColor.YELLOW + "cmenu.show").build()
                             // todo: add more
                     );

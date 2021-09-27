@@ -21,6 +21,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.DataFormatException;
@@ -43,8 +45,8 @@ public class SkinCommand implements TabExecutor, Listener {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        //        0     1        2     |   0      1        2           3
-        // skin <set <title> [player]> | <save <title> <image_url> [is_slim]> | <reset [player]> | <delete <title>>
+        //        0     1        2     |   0      1        2           3           0      1            0      1          0        1         2
+        // skin <set <title> [player]> | <save <title> <image_url> [is_slim]> | <reset [player]> | <delete <title>> | <player <nickname> [title]>
         if (args.length == 1 && args[0].equals("reset")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
@@ -67,7 +69,7 @@ public class SkinCommand implements TabExecutor, Listener {
                             if (getAvailableSkins().contains(title)) {
                                 saveSkinRelation(player, title);
                                 Main.getReflector().setSkin(player, title);
-                                player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
+//                                player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
                             } else
                                 player.sendMessage(ChatColor.RED + "Неверное название скина");
                         } else
@@ -102,6 +104,59 @@ public class SkinCommand implements TabExecutor, Listener {
                         sender.sendMessage(ChatColor.RED + "Нет прав на использование команды");
                     break;
                 }
+                case "player": {
+                    Player subjectPlayer = Bukkit.getPlayer(args[1]);
+                    if (subjectPlayer == null) {
+                        try {
+                            subjectPlayer = Bukkit.getPlayer(UUID.fromString(args[1]));
+                        } catch (IllegalArgumentException e) {
+                            sender.sendMessage(ChatColor.RED + "Игрок с указанным ником/UUID не найден");
+                        }
+                    }
+                    if (subjectPlayer != null) {
+                        Player finalSubjectPlayer = subjectPlayer;
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                HashMap<Integer, byte[]> values = new HashMap<>();
+                                values.put(1, Converter.uuidToBytes(finalSubjectPlayer.getUniqueId()));
+                                if (Boolean.TRUE.equals(Main.makeExecuteQuery(
+                                        new QueryBuilder().select(Main.playerSkinsTableName)
+                                                .what("Skin_Value, Skin_Signature")
+                                                .from()
+                                                .where("Player = ?")
+                                                .build(),
+                                        values,
+                                        (a, skinResultSet) -> {
+                                            try {
+                                                if (skinResultSet.next()) {
+                                                    Main.makeExecuteUpdate(
+                                                            new QueryBuilder().insert(Main.skinsTableName)
+                                                                    .setColumns("Name", "Skin_Value", "Skin_Signature")
+                                                                    .setValues("'" + finalSubjectPlayer.getName() + "'", "'" + skinResultSet.getString(1) + "'", "'" + skinResultSet.getString(2) + "'")
+                                                                    .onDuplicateKeyUpdate()
+                                                                    .build(),
+                                                            new HashMap<>()
+                                                    );
+                                                    return true;
+                                                } else
+                                                    return false;
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                                return false;
+                                            }
+                                        },
+                                        null
+                                )))
+                                    sender.sendMessage(ChatColor.GREEN + "Скин указанного игрока успешно скопирован в БД общедоступных скинов");
+                                else
+                                    sender.sendMessage(ChatColor.RED + "Скин указанного игрока не был найден или возникла другая ошибка");
+                            }
+                        }.runTaskAsynchronously(Main.getPlugin(Main.class));
+                    } else
+                        return false;
+                    break;
+                }
                 default:
                     return false;
             }
@@ -117,7 +172,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                 saveSkinRelation(target, title);
                                 Main.getReflector().setSkin(target, title);
                                 sender.sendMessage(ChatColor.YELLOW + "Игроку " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " был присвоен скин " + ChatColor.GOLD + title);
-                                target.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
+//                                target.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
                             }
                             else if (target == null)
                                 sender.sendMessage(ChatColor.RED + "Игрок не найден");
@@ -162,6 +217,59 @@ public class SkinCommand implements TabExecutor, Listener {
                     }
                     else
                         sender.sendMessage(ChatColor.RED + "Нет прав на использование команды");
+                    break;
+                }
+                case "player": {
+                    Player subjectPlayer = Bukkit.getPlayer(args[1]);
+                    if (subjectPlayer == null) {
+                        try {
+                            subjectPlayer = Bukkit.getPlayer(UUID.fromString(args[1]));
+                        } catch (IllegalArgumentException e) {
+                            sender.sendMessage(ChatColor.RED + "Игрок с указанным ником/UUID не найден");
+                        }
+                    }
+                    if (subjectPlayer != null) {
+                        Player finalSubjectPlayer = subjectPlayer;
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                HashMap<Integer, byte[]> values = new HashMap<>();
+                                values.put(1, Converter.uuidToBytes(finalSubjectPlayer.getUniqueId()));
+                                if (Boolean.TRUE.equals(Main.makeExecuteQuery(
+                                        new QueryBuilder().select(Main.playerSkinsTableName)
+                                                .what("Skin_Value, Skin_Signature")
+                                                .from()
+                                                .where("Player = ?")
+                                                .build(),
+                                        values,
+                                        (a, skinResultSet) -> {
+                                            try {
+                                                if (skinResultSet.next()) {
+                                                    Main.makeExecuteUpdate(
+                                                            new QueryBuilder().insert(Main.skinsTableName)
+                                                                    .setColumns("Name", "Skin_Value", "Skin_Signature")
+                                                                    .setValues("'" + args[2] + "'", "'" + skinResultSet.getString(1) + "'", "'" + skinResultSet.getString(2) + "'")
+                                                                    .onDuplicateKeyUpdate()
+                                                                    .build(),
+                                                            new HashMap<>()
+                                                    );
+                                                    return true;
+                                                } else
+                                                    return false;
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                                return false;
+                                            }
+                                        },
+                                        null
+                                )))
+                                    sender.sendMessage(ChatColor.GREEN + "Скин указанного игрока успешно скопирован в БД общедоступных скинов");
+                                else
+                                    sender.sendMessage(ChatColor.RED + "Скин указанного игрока не был найден или возникла другая ошибка");
+                            }
+                        }.runTaskAsynchronously(Main.getPlugin(Main.class));
+                    } else
+                        return false;
                     break;
                 }
                 default:
@@ -244,9 +352,36 @@ public class SkinCommand implements TabExecutor, Listener {
                 case 200: {
                     String value = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("value").getAsString();
                     String signature = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("signature").getAsString();
-                    Main.makeExecuteUpdate(new QueryBuilder().insert(Main.skinsTableName)
-                            .setValues("'" + title + "'", "'" + value + "'", "'" + signature + "'").build(),
-                            new HashMap<>());
+                    Main.makeExecuteUpdate(
+                            new QueryBuilder().insert(Main.skinsTableName)
+                                    .setValues("'" + title + "'", "'" + value + "'", "'" + signature + "'")
+                                    .onDuplicateKeyUpdate()
+                                    .build(),
+                            new HashMap<>()
+                    );
+                    Main.makeExecuteQuery(
+                            new QueryBuilder().select(Main.skinRelationTableName)
+                                    .what("Player")
+                                    .from()
+                                    .where("Skin_Name = '" + title + "'")
+                                    .build(),
+                            new HashMap<>(),
+                            (args, playersResultSet) -> {
+                                try {
+                                    while (playersResultSet.next()) {
+                                        Player player = Bukkit.getPlayer(Converter.uuidFromBytes(playersResultSet.getBytes(1)));
+                                        if (player != null) {
+                                            Main.getReflector().setSkin(player, title);
+                                            player.sendMessage(ChatColor.YELLOW + "Ваш скин был обновлён");
+                                        }
+                                    }
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                                return null;
+                            },
+                            null
+                    );
                     return true;
                 }
                 case 400: {
@@ -300,6 +435,8 @@ public class SkinCommand implements TabExecutor, Listener {
             public void run() {
                 if (playerIterator.hasNext())
                     resetSkin(playerIterator.next());
+                else
+                    cancel();
             }
         }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 10L);
     }
@@ -357,9 +494,13 @@ public class SkinCommand implements TabExecutor, Listener {
     public static void saveSkinRelation(@NotNull final Player player, @Nullable final String title) {
         HashMap<Integer, byte[]> values = new HashMap<>();
         values.put(1, Converter.uuidToBytes(player.getUniqueId()));
-        Main.makeExecuteUpdate("DELETE FROM " + Main.skinRelationTableName + " WHERE Player = ?;", values);
-        Main.makeExecuteUpdate(new QueryBuilder().insert(Main.skinRelationTableName)
-                .setValues("?", "'" + title + "'").build(),
+        values.put(2, Converter.uuidToBytes(player.getUniqueId()));
+        Main.makeExecuteUpdate(
+                new QueryBuilder().insert(Main.skinRelationTableName)
+                        .setColumns("Player", "Skin_Name")
+                        .setValues("?", "'" + title + "'")
+                        .onDuplicateKeyUpdate()
+                        .build(),
                 values);
     }
 
@@ -377,25 +518,60 @@ public class SkinCommand implements TabExecutor, Listener {
             @Override
             public void run() {
                 try {
-                    Connection.Response response = Jsoup
-                            .connect("https://api.mineskin.org/generate/user?name=" + player.getName() + "&uuid=" + player.getUniqueId().toString().replace("-" ,""))
-                            .userAgent("kvadratutils")
-                            .method(Connection.Method.POST)
-                            .ignoreContentType(true)
-                            .ignoreHttpErrors(true)
-                            .timeout(40000)
-                            .execute();
-                    JsonReader reader = new JsonReader(new StringReader(response.body()));
-                    reader.setLenient(true);
-                    JsonObject jsonResponse = new JsonParser().parse(reader).getAsJsonObject();
+                    AtomicReference<String> value = new AtomicReference<>(),
+                                            signature = new AtomicReference<>();
+                    HashMap<Integer, byte[]> values = new HashMap<>();
+                    values.put(1, Converter.uuidToBytes(player.getUniqueId()));
+                    Main.makeExecuteQuery(
+                            new QueryBuilder().select(Main.playerSkinsTableName)
+                                    .what("Skin_Value, Skin_Signature")
+                                    .from()
+                                    .where("Player = ?")
+                                    .build(),
+                            values,
+                            (args, skinResultSet) -> {
+                                try {
+                                    if (skinResultSet.next()) {
+                                        value.set(skinResultSet.getString(1));
+                                        signature.set(skinResultSet.getString(2));
+                                    }
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                                return null;
+                            },
+                            null);
 
-                    if (response.statusCode() == 200) {
-                        String value = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("value").getAsString();
-                        String signature = jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("signature").getAsString();
-                        Main.getReflector().setSkin(player, value, signature);
+                    if (value.get() == null || signature.get() == null) {
+                        Connection.Response response = Jsoup
+                                .connect("https://api.mineskin.org/generate/user?name=" + player.getName() + "&uuid=" + player.getUniqueId().toString().replace("-", ""))
+                                .userAgent("kvadratutils")
+                                .method(Connection.Method.POST)
+                                .ignoreContentType(true)
+                                .ignoreHttpErrors(true)
+                                .timeout(40000)
+                                .execute();
+                        JsonReader reader = new JsonReader(new StringReader(response.body()));
+                        reader.setLenient(true);
+                        JsonObject jsonResponse = new JsonParser().parse(reader).getAsJsonObject();
+
+                        if (response.statusCode() == 200) {
+                            value.set(jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("value").getAsString());
+                            signature.set(jsonResponse.getAsJsonObject("data").getAsJsonObject("texture").getAsJsonPrimitive("signature").getAsString());
+                            Main.getReflector().setSkin(player, value.get(), signature.get());
+                            values.put(2, Converter.uuidToBytes(player.getUniqueId()));
+                            Main.makeExecuteUpdate(
+                                    new QueryBuilder().insert(Main.playerSkinsTableName)
+                                            .setColumns("Player", "Skin_Value", "Skin_Signature")
+                                            .setValues("?", "'" + value.get() + "'", "'" + signature.get() + "'")
+                                            .onDuplicateKeyUpdate()
+                                            .build(),
+                                    values);
+                        } else
+                            System.out.println(jsonResponse.toString());
                     }
                     else
-                        System.out.println(jsonResponse.toString());
+                        Main.getReflector().setSkin(player, value.get(), signature.get());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -421,7 +597,8 @@ public class SkinCommand implements TabExecutor, Listener {
                                 player.hasPermission("kvadratutils.command.skin.set") ? "set" : null,
                                 player.hasPermission("kvadratutils.command.skin.save") ? "save" : null,
                                 player.hasPermission("kvadratutils.command.skin.reset") ? "reset" : null,
-                                player.hasPermission("kvadratutils.command.skin.delete") ? "delete" : null
+                                player.hasPermission("kvadratutils.command.skin.delete") ? "delete" : null,
+                                player.hasPermission("kvadratutils.command.skin.save") ? "player" : null
                         ).filter(Objects::nonNull).collect(Collectors.toList()),
                         new ArrayList<>());
             if (args.length == 2) {
@@ -433,12 +610,21 @@ public class SkinCommand implements TabExecutor, Listener {
                     return copyPartialInnerMatches(args[1], Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
                 else if (args[0].equals("delete") && player.hasPermission("kvadratutils.command.skin.delete"))
                     return copyPartialInnerMatches(args[1], getAvailableSkins());
+                else if (args[0].equals("player") && player.hasPermission("kvadratutils.command.skin.save")) {
+                    List<String> options = Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+                    RayTraceResult rayTraceResult = player.getWorld().rayTraceEntities(player.getEyeLocation(), player.getEyeLocation().getDirection(), 6d, e -> e instanceof Player);
+                    if (rayTraceResult != null && rayTraceResult.getHitEntity() != null)
+                        options.add(rayTraceResult.getHitEntity().getName());
+                    return copyPartialInnerMatches(args[1], options);
+                }
             }
             if (args.length == 3) {
                 if (args[0].equals("set") && player.hasPermission("kvadratutils.command.skin.set") && player.hasPermission("kvadratutils.command.skin.set.others"))
                     return copyPartialInnerMatches(args[2], Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
                 if (args[0].equals("save") && player.hasPermission("kvadratutils.command.skin.save"))
                     return args[2].length() == 0 ? Collections.singletonList("<image_url>") : null;
+                else if (args[0].equals("player") && player.hasPermission("kvadratutils.command.skin.save"))
+                    return args[2].length() == 0 ? Collections.singletonList("[title]") : null;
             }
         }
         return null;
