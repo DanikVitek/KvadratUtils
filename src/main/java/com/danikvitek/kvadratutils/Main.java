@@ -5,6 +5,7 @@ import com.danikvitek.kvadratutils.commands.*;
 import com.danikvitek.kvadratutils.utils.Converter;
 import com.danikvitek.kvadratutils.utils.CustomConfigManager;
 import com.danikvitek.kvadratutils.utils.QueryBuilder;
+import com.danikvitek.kvadratutils.utils.annotations.ConfigVar;
 import com.danikvitek.kvadratutils.utils.gui.MenuHandler;
 import com.danikvitek.kvadratutils.utils.nms.Reflector;
 import com.danikvitek.kvadratutils.utils.nms.Reflector_1_17;
@@ -42,9 +43,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public final class Main extends JavaPlugin implements Listener {
+    @ConfigVar("MineSkin-API.key")
+    private static String API_KEY;
+    @ConfigVar("MineSkin-API.user-agent")
+    private static String API_UserAgent;
+
+    public static String getAPIKey() {
+        return API_KEY;
+    }
+    public static String getAPIUserAgent() {
+        return API_UserAgent;
+    }
 
     private static LuckPerms luckPermsAPI;
     private static MenuHandler menuHandler;
@@ -59,6 +72,7 @@ public final class Main extends JavaPlugin implements Listener {
     public static final String skinsTableName = "skins";
     public static final String playerSkinsTableName = "player_skins";
     public static final String skinRelationTableName = "skin_relations";
+    public static final String refCommandsTableName = "reference_commands";
 
     public static Reflector getReflector() {
         return reflector;
@@ -82,6 +96,8 @@ public final class Main extends JavaPlugin implements Listener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        ConfigVar.Manager.register(this.getClass());
+        ConfigVar.Manager.update();
 
         PaperLib.suggestPaper(this);
 
@@ -118,6 +134,9 @@ public final class Main extends JavaPlugin implements Listener {
 
         Objects.requireNonNull(getCommand("menus")).setExecutor(new MenusCommand());
         Objects.requireNonNull(getCommand("manage_permissions")).setExecutor(new ManagePermissionsCommand());
+        Objects.requireNonNull(getCommand("gamerules")).setExecutor(new GameRulesCommand());
+        Objects.requireNonNull(getCommand("refcommand")).setExecutor(new RefCommandCommand());
+        Objects.requireNonNull(getCommand("ref")).setExecutor(new RefCommandExecutor());
 
         // Database
         MysqlConnectionPoolDataSource mcpDataSource = new MysqlConnectionPoolDataSource();
@@ -140,10 +159,10 @@ public final class Main extends JavaPlugin implements Listener {
             reflector = new Reflector_1_8();
         } catch (ClassNotFoundException | NoClassDefFoundError e1) {
             try {
-                System.out.println(e1.getMessage());
+                getLogger().log(Level.ALL, e1.getMessage());
                 reflector = new Reflector_1_17();
             } catch (ClassNotFoundException | NoClassDefFoundError e2) {
-                System.out.println(e2.getMessage());
+                getLogger().log(Level.ALL, e2.getMessage());
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Не удалось загрузить плагин для этой версии (" + Bukkit.getVersion() + ")");
                 Bukkit.getPluginManager().disablePlugin(this);
             }
@@ -174,8 +193,9 @@ public final class Main extends JavaPlugin implements Listener {
                     Player player = playerQueue.next();
                     try {
                         org.jsoup.Connection.Response response = Jsoup
-                                .connect("https://api.mineskin.org/generate/user?name=" + player.getName() + "&uuid=" + player.getUniqueId().toString().replace("-", ""))
-                                .userAgent("kvadratutils")
+                                .connect("https://api.mineskin.org/generate/user?name=" + player.getName() + "&uuid=" + player.getUniqueId()/*.toString().replace("-", "")*/)
+                                .userAgent(API_UserAgent)
+                                .header("Authorization", API_KEY)
                                 .method(org.jsoup.Connection.Method.POST)
                                 .ignoreContentType(true)
                                 .ignoreHttpErrors(true)
@@ -198,8 +218,10 @@ public final class Main extends JavaPlugin implements Listener {
                                             .onDuplicateKeyUpdate()
                                             .build(),
                                     values);
-                        } else
-                            System.out.println(jsonResponse.toString());
+                        } else {
+                            getLogger().log(Level.ALL, response.url().toString());
+                            getLogger().log(Level.ALL, jsonResponse.toString());
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -207,7 +229,7 @@ public final class Main extends JavaPlugin implements Listener {
                 else
                     cancel();
             }
-        }.runTaskTimerAsynchronously(this, 0L, 100L);
+        }.runTaskTimerAsynchronously(this, 0L, 140L);
 
         luckPermsAPI.getEventBus().subscribe(
                 this,
@@ -292,21 +314,21 @@ public final class Main extends JavaPlugin implements Listener {
             }
     }
 
-    public static @Nullable Integer makeExecuteUpdate(String query, HashMap<Integer, ?> values) {
+    public static boolean makeExecuteUpdate(String query, HashMap<Integer, ?> values) {
         Connection connection = getConnection();
-        Integer result = null;
         if (connection != null)
             try {
                 PreparedStatement ps = connection.prepareStatement(query);
                 for (Map.Entry<Integer, ?> value: values.entrySet())
                     ps.setObject(value.getKey(), value.getValue());
-                result = ps.executeUpdate();
+                ps.executeUpdate();
                 connection.close();
             } catch (SQLException e) {
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "QUERY: " + query);
                 e.printStackTrace();
+                return false;
             }
-        return result;
+        return true;
     }
 
     public static @Nullable <T> T makeExecuteQuery(String query, HashMap<Integer, ?> values, @Nullable BiFunction<List<?>, ResultSet, T> function, @Nullable List<?> args) {
@@ -336,13 +358,14 @@ public final class Main extends JavaPlugin implements Listener {
         createSkinsTable();
         createPlayerSkinsTable();
         createSkinsRelationTable();
+        createRefCommandsTable();
     }
 
     private static void createWorldsTable() {
         String createTableQuery = new QueryBuilder().createTable(worldsTableName)
                 .addAttribute("ID", "INT NOT NULL AUTO_INCREMENT")
                 .addAttribute("UUID", "BINARY(16) NOT NULL")
-                .addAttribute("Name", "VARCHAR(" + Bukkit.getWorlds().stream().map(World::getName).map(String::length).max(Integer::compareTo).orElse(15) + ") NOT NULL")
+                .addAttribute("Name", "VARCHAR(" + Bukkit.getWorlds().stream().map(World::getName).map(String::length).max(Integer::compareTo).orElse(64) + ") NOT NULL")
                 .setPrimaryKeys("ID")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());
@@ -410,6 +433,15 @@ public final class Main extends JavaPlugin implements Listener {
                 .addAttribute("Skin_Value", "BLOB NOT NULL")
                 .addAttribute("Skin_Signature", "BLOB NOT NULL")
                 .setPrimaryKeys("Player")
+                .build();
+        makeExecute(createTableQuery, new HashMap<>());
+    }
+
+    private static void createRefCommandsTable() {
+        String createTableQuery = new QueryBuilder().createTable(refCommandsTableName)
+                .addAttribute("Alias", "VARCHAR(50) NOT NULL")
+                .addAttribute("Command", "TEXT NOT NULL")
+                .setPrimaryKeys("Alias")
                 .build();
         makeExecute(createTableQuery, new HashMap<>());
     }

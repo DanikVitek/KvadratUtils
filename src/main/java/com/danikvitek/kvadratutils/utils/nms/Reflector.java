@@ -225,6 +225,7 @@ public class Reflector {
             final float xp = player.getExp();
             final double maxHealth = player.getMaxHealth();
             final double health = player.getHealth();
+            final boolean isOp = player.isOp();
 
             new BukkitRunnable() {
                 @Override
@@ -241,6 +242,10 @@ public class Reflector {
                         player.setExp(xp);
                         player.setMaxHealth(maxHealth);
                         player.setHealth(health);
+                        player.setOp(isOp);
+
+                        if (player.isOp() || player.hasPermission("kvadratutils.f3n_f3f4"))
+                            sendPseudoOPStatus(player);
 
                         playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, addPlayerPacket);
 

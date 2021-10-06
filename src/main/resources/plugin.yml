@@ -37,7 +37,7 @@ commands:
     usage: "/skin_select, /ss"
   skin:
     description: "Установка, сохранение, срос или удаление скина"
-    usage: "/skin <set <title> [player]> | <save <title> <image_url> [is_slim]> | <reset [player]> | <delete <title>>"
+    usage: "/skin <set <title> [nickname]> | <save <title> <image_url> [is_slim]> | <reset [nickname]> | <delete <title>> | <player <nickname> [title]> | <reload [nickname]>"
   tp_menu:
     permission: kvadratutils.command.tp_menu
     aliases:
@@ -52,6 +52,24 @@ commands:
       - mp
     description: Открывает меню управления разрешениями
     usage: "/manage_permissions, /permissions, /permission_manager, /mp"
+  gamerules:
+    permission: kvadratutils.command.gamerules
+    aliases:
+      - grs
+    description: Открывает меню управления игровыми правилами
+    usage: "/gamerules, /grs"
+  refcommand:
+    permission: kvadratutils.command.refcommand
+    aliases:
+      - refc
+    description: Сделать сокращение указанной команды с аргументами
+    usage: "/refcommand, /ref <alias> <command [...args]>"
+  ref:
+    permission: kvadratutils.command.ref
+    aliases:
+      - r
+    description: Использовать сокращённую команду
+    usage: "/r <alias>"
 
 permissions:
   kvadratutils.moderator:
@@ -64,9 +82,12 @@ permissions:
       - kvadratutils.command.skin_select
       - kvadratutils.command.tp_menu
       - kvadratutils.command.manage_permissions
+      - kvadratutils.command.gamerules
       - kvadratutils.teleport_to_player.*
       - kvadratutils.teleport_player.*
       - kvadratutils.command.skin.*
+      - kvadratutils.command.refcommand
+      - kvadratutils.command.ref
   kvadratutils.f3n_f3f4:
     default: false
   kvadratutils.command.manage:
@@ -77,6 +98,13 @@ permissions:
     default: op
   kvadratutils.command.menus:
     default: op
+  kvadratutils.command.gamerules:
+    default: op
+
+  kvadratutils.command.refcommand:
+    default: op
+  kvadratutils.command.ref:
+    default: true
 
   kvadratutils.command.tp_menu:
     default: op
@@ -103,6 +131,8 @@ permissions:
       - kvadratutils.command.skin.set.others
       - kvadratutils.command.skin.reset
       - kvadratutils.command.skin.reset.others
+      - kvadratutils.command.skin.reload
+      - kvadratutils.command.skin.reload.others
       - kvadratutils.command.skin.delete
     default: op
   kvadratutils.command.skin.save:
@@ -124,6 +154,14 @@ permissions:
       - kvadratutils.command.skin.reset
     default: op
     description: Разрешает сбрасывать скины другим игрокам
+  kvadratutils.command.skin.reload:
+    default: true
+    description: Разрешает перезагрузить свой скин
+  kvadratutils.command.skin.reload.others:
+    children:
+      - kvadratutils.command.skin.reload
+    default: op
+    description: Разрешает перезагрузить свой скин
   kvadratutils.command.skin.delete:
     default: op
     description: Разрешает удалять скины из базы данных

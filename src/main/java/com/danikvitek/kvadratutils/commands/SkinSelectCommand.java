@@ -29,6 +29,11 @@ import java.util.*;
 
 public class SkinSelectCommand implements CommandExecutor {
     private static final HashMap<UUID, Integer> pages = new HashMap<>();
+    private static final ItemStack reloadSkinHead;
+
+    static {
+        reloadSkinHead = getReloadSkinHead();
+    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -76,6 +81,12 @@ public class SkinSelectCommand implements CommandExecutor {
                 event.setCancelled(true);
                 pages.remove(player.getUniqueId());
                 Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.performCommand("menus");
+                    }
+                }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
         skinMenu.setButton(53, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -101,6 +112,7 @@ public class SkinSelectCommand implements CommandExecutor {
                         @Override
                         public void run() {
                             String title = Objects.requireNonNull(pageIcons.get(_i).getItemMeta()).getDisplayName();
+                            SkinCommand.saveSkinRelation(player, title);
                             Main.getReflector().setSkin(player, title);
 //                            player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
                         }
@@ -108,6 +120,16 @@ public class SkinSelectCommand implements CommandExecutor {
                 }
             });
         }
+        skinMenu.setButton(47, new Button(reloadSkinHead) {
+            @Override
+            public void onClick(Menu menu, InventoryClickEvent event) {
+                event.setCancelled(true);
+                if (player.hasPermission("kvadratutils.command.skin.reload")) {
+                    SkinCommand.reloadSkin(player);
+                    player.sendMessage(ChatColor.YELLOW + "Ваш скин перезагружен");
+                }
+            }
+        });
         skinMenu.setButton(48, new Button(new ItemBuilder(Material.CACTUS).setDisplayName("Сбросить скин").build()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
@@ -122,7 +144,7 @@ public class SkinSelectCommand implements CommandExecutor {
                 }.runTaskAsynchronously(Main.getPlugin(Main.class));
             }
         });
-        skinMenu.setButton(50, new Button(new ItemBuilder(getCurrentSkinHead(player)).setDisplayName("Текущий скин").build()) {
+        skinMenu.setButton(50, new Button(getCurrentSkinHead(player)) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
@@ -163,7 +185,7 @@ public class SkinSelectCommand implements CommandExecutor {
     }
 
     private static ItemStack getCurrentSkinHead(Player player) {
-        ItemStack currentSkinHead = new ItemBuilder(Material.PLAYER_HEAD).build();
+        ItemStack currentSkinHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Текущий скин").build();
         SkullMeta meta = (SkullMeta) currentSkinHead.getItemMeta();
 
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);
@@ -182,5 +204,28 @@ public class SkinSelectCommand implements CommandExecutor {
         currentSkinHead.setItemMeta(meta);
 
         return currentSkinHead;
+    }
+
+    private static ItemStack getReloadSkinHead() {
+        //give @p skull 1 3 {display:{Name:"Action Repeat"},SkullOwner:{Id:"870abaa4-4183-4aed-a527-b943a2f334c2",Properties:{textures:[{Value:"eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTUzZGQ0NTc5ZWRjMmE2ZjIwMzJmOTViMWMxODk4MTI5MWI2YzdjMTFlYjM0YjZhOGVkMzZhZmJmYmNlZmZmYiJ9fX0="}]}}}
+        ItemStack reloadSkinHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Перезагрузить скин").build();
+        SkullMeta meta = (SkullMeta) reloadSkinHead.getItemMeta();
+
+        GameProfile profile = new GameProfile(UUID.randomUUID(), null);
+        Property playerTextureProperty = new Property("textures", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTUzZGQ0NTc5ZWRjMmE2ZjIwMzJmOTViMWMxODk4MTI5MWI2YzdjMTFlYjM0YjZhOGVkMzZhZmJmYmNlZmZmYiJ9fX0=", null);
+        profile.getProperties().put("textures", playerTextureProperty);
+        Field field;
+        try {
+            assert meta != null;
+            field = meta.getClass().getDeclaredField("profile");
+            field.setAccessible(true);
+            field.set(meta, profile);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        reloadSkinHead.setItemMeta(meta);
+
+        return reloadSkinHead;
     }
 }

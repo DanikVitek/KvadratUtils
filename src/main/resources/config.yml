@@ -4,3 +4,7 @@ database:
   name: kvadrat_utils_db
   login: root
   password: ""
+
+MineSkin-API:
+  key: b3e706213c3d29a88a1922ccc9c9c76a801dc111f0c24f5f7e2f41cd268ce4fc
+  user-agent: kvadratutils

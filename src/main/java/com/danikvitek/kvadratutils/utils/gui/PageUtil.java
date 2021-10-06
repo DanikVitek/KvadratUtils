@@ -11,6 +11,6 @@ public class PageUtil {
     }
 
     public static List<ItemStack> getPageItems(List<ItemStack> allItems, int page, int spaces) {
-        return new ArrayList<>(allItems.subList(spaces * page , Math.min(spaces * (page + 1), allItems.size())));
+        return new ArrayList<>(allItems.subList(Math.max(spaces * page, 0) , Math.min(spaces * (page + 1), allItems.size())));
     }
 }

@@ -15,7 +15,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +23,10 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class MenusCommand implements CommandExecutor {
-    public static final ItemStack SKIN_MENU_BUTTON;
+    public static final ItemStack SKIN_MENU_ICON;
 
     static {
-        SKIN_MENU_BUTTON = getPlayerHead();
+        SKIN_MENU_ICON = getSetSkinIcon();
     }
 
     @Override
@@ -49,7 +48,7 @@ public class MenusCommand implements CommandExecutor {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
-                        player.performCommand("entity_manager");
+                        player.performCommand("kvadratutils:entity_manager");
                     }
                 });
 
@@ -57,23 +56,23 @@ public class MenusCommand implements CommandExecutor {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
-                        player.performCommand("tp_menu");
+                        player.performCommand("kvadratutils:tp_menu");
                     }
                 });
 
-                menusMenu.setButton(22, new Button(SKIN_MENU_BUTTON.clone()) {
+                menusMenu.setButton(22, new Button(SKIN_MENU_ICON.clone()) {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
-                        player.performCommand("skin_select");
+                        player.performCommand("kvadratutils:skin_select");
                     }
                 });
 
-                menusMenu.setButton(24, new Button(new ItemBuilder(Material.WOODEN_AXE).setDisplayName("World Edit").addItemFlags(ItemFlag.HIDE_ATTRIBUTES).build()) {
+                menusMenu.setButton(24, new Button(new ItemBuilder(Material.KNOWLEDGE_BOOK).setDisplayName("Игровые правила").build()) {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
-                        // TODO: 15.09.2021 do something with this
+                        player.performCommand("kvadratutils:gamerules");
                     }
                 });
 
@@ -82,7 +81,7 @@ public class MenusCommand implements CommandExecutor {
                         @Override
                         public void onClick(Menu menu, InventoryClickEvent event) {
                             event.setCancelled(true);
-                            player.performCommand("manage_permissions");
+                            player.performCommand("kvadratutils:manage_permissions");
                         }
                     });
 
@@ -90,7 +89,7 @@ public class MenusCommand implements CommandExecutor {
                     @Override
                     public void onClick(Menu menu, InventoryClickEvent event) {
                         event.setCancelled(true);
-                        player.performCommand("command_blocks");
+                        player.performCommand("kvadratutils:command_blocks");
                     }
                 });
 
@@ -104,7 +103,7 @@ public class MenusCommand implements CommandExecutor {
         return true;
     }
 
-    private static ItemStack getPlayerHead() {
+    private static ItemStack getSetSkinIcon() {
         ItemStack skinSelectPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Установить скин").build();
         SkullMeta meta = (SkullMeta) skinSelectPlayerHead.getItemMeta();
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);

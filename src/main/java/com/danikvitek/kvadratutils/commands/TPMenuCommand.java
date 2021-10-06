@@ -19,7 +19,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -33,24 +32,33 @@ import java.util.stream.Collectors;
 
 public class TPMenuCommand implements CommandExecutor, Listener {
     private static final HashMap<UUID, Integer> pages = new HashMap<>();
-    private static final HashMap<UUID, Long> collisionCooldown = new HashMap<>();
-    private static Team notCollidableTeam = Bukkit.getScoreboardManager().getNewScoreboard().registerNewTeam("not_collidable");
+    private static final HashMap<UUID, Long> collisionCooldowns = new HashMap<>();
+    private static final Team notCollidableTeam;
+    private static final long cooldown = 10000L;
 
-    public TPMenuCommand() {
-        notCollidableTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.ALWAYS);
+    static {
+        notCollidableTeam = Objects.requireNonNull(Bukkit.getScoreboardManager()).getNewScoreboard().registerNewTeam("not_collidable");
+        notCollidableTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+        notCollidableTeam.addEntry(ChatColor.BLACK + "" + ChatColor.WHITE);
     }
 
     public static final BukkitTask collisionCooldownTask = new BukkitRunnable() {
         @Override
         public void run() {
-            for (Map.Entry<UUID, Long> entry : collisionCooldown.entrySet()) {
-                if (System.currentTimeMillis() > entry.getValue()) {
-                    Player player = Bukkit.getPlayer(entry.getKey());
-                    if (player != null)
-                        notCollidableTeam.removePlayer(player);
-                    collisionCooldown.remove(entry.getKey());
+            try {
+                for (Map.Entry<UUID, Long> entry : collisionCooldowns.entrySet()) {
+                    if (System.currentTimeMillis() > entry.getValue()) {
+                        Player player = Bukkit.getPlayer(entry.getKey());
+                        if (player != null) {
+//                            System.out.println(notCollidableTeam.hasPlayer(player));
+                            notCollidableTeam.removePlayer(player);
+                        }
+                        collisionCooldowns.remove(entry.getKey());
+                    }
                 }
-            }
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                e.printStackTrace();
+            } catch (ConcurrentModificationException ignored) {}
         }
     }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 1L);
 
@@ -100,6 +108,12 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                 event.setCancelled(true);
                 pages.remove(player.getUniqueId());
                 Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.performCommand("menus");
+                    }
+                }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
         teleportMenu.setButton(35, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -141,9 +155,9 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
                         if (!playerTeleportMenuEvent.isCancelled()) {
                             notCollidableTeam.addPlayer(player);
-                            collisionCooldown.put(player.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            collisionCooldowns.put(player.getUniqueId(), System.currentTimeMillis() + cooldown);
                             notCollidableTeam.addPlayer(subjectPlayer);
-                            collisionCooldown.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            collisionCooldowns.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + cooldown);
                             player.teleport(subjectPlayer, PlayerTeleportEvent.TeleportCause.PLUGIN);
                             Main.getMenuHandler().closeMenu(player);
                         }
@@ -163,9 +177,9 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                         Bukkit.getPluginManager().callEvent(playerTeleportMenuEvent);
                         if (!playerTeleportMenuEvent.isCancelled()) {
                             player.setCollidable(false);
-                            collisionCooldown.put(player.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            collisionCooldowns.put(player.getUniqueId(), System.currentTimeMillis() + cooldown);
                             subjectPlayer.setCollidable(false);
-                            collisionCooldown.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + 3000L);
+                            collisionCooldowns.put(subjectPlayer.getUniqueId(), System.currentTimeMillis() + cooldown);
                             subjectPlayer.teleport(player, PlayerTeleportEvent.TeleportCause.PLUGIN);
                         }
                     }

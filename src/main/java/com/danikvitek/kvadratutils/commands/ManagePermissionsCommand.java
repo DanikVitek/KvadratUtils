@@ -220,17 +220,17 @@ public class ManagePermissionsCommand implements CommandExecutor {
                             new ItemBuilder(Material.GRASS_BLOCK).setDisplayName(ChatColor.GOLD + "использовать /gamemode").setLore("", ChatColor.YELLOW + "minecraft.command.gamemode").build(),
                             new ItemBuilder(Material.BEE_SPAWN_EGG).setDisplayName(ChatColor.GOLD + "Менеджер сущностей").setLore("", ChatColor.YELLOW + "kvadratutils.command.entity_manager").build(),
                             new ItemBuilder(Material.COMMAND_BLOCK).setDisplayName(ChatColor.GOLD + "Менеджер командных блоков").setLore("", ChatColor.YELLOW + "kvadratutils.command.command_blocks").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Меню выбора скинов").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin_select").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Меню выбора скинов").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin_select").build(),
                             new ItemBuilder(Material.ENDER_PEARL).setDisplayName(ChatColor.GOLD + "Меню телепортации").setLore("", ChatColor.YELLOW + "kvadratutils.command.tp_menu").build(),
                             new ItemBuilder(Material.PLAYER_HEAD).setOwner("MHF_ArrowDown").setDisplayName(ChatColor.GOLD + "Телепортация к тебе").setLore("", ChatColor.YELLOW + "kvadratutils.teleport_to_player." + player.getName()).build(),
                             new ItemBuilder(Material.PLAYER_HEAD).setOwner("MHF_ArrowUp").setDisplayName(ChatColor.GOLD + "Телепортация тебя").setLore("", ChatColor.YELLOW + "kvadratutils.teleport_player." + player.getName()).build(),
                             new ItemBuilder(Material.WRITABLE_BOOK).setDisplayName(ChatColor.GOLD + "Менеджер разрешений").setLore("", ChatColor.YELLOW + "kvadratutils.command.manage_permissions").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set.others").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset.others").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Сохранять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.save").build(),
-                            new ItemBuilder(MenusCommand.SKIN_MENU_BUTTON.clone()).setDisplayName(ChatColor.GOLD + "Удалять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.delete").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Установить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.set.others").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Сброкить скин другому игроку").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.reset.others").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Сохранять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.save").build(),
+                            new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Удалять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.delete").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову блоки").setLore("", ChatColor.YELLOW + "hat.blocks").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову предметы").setLore("", ChatColor.YELLOW + "hat.items").build(),
                             new ItemBuilder(Material.PHANTOM_MEMBRANE).setDisplayName(ChatColor.GOLD + "Открывать /cmenu").setLore("", ChatColor.YELLOW + "cmenu.show").build()
@@ -247,7 +247,11 @@ public class ManagePermissionsCommand implements CommandExecutor {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                pages.put(player.getUniqueId(), pages.get(player.getUniqueId()) <= 0 ? PageUtil.getMaxPages(getPlayerHeads(player), 45) - 1 : pages.get(player.getUniqueId()) - 1);
+                pages.put(
+                        player.getUniqueId(),
+                        pages.get(player.getUniqueId()) <= 0
+                                ? PageUtil.getMaxPages(getPlayerHeads(player), 45) - 1
+                                : pages.get(player.getUniqueId()) - 1);
                 redrawMenu(player, managerMenu, true);
             }
         });
@@ -257,6 +261,12 @@ public class ManagePermissionsCommand implements CommandExecutor {
                 event.setCancelled(true);
                 pages.remove(player.getUniqueId());
                 Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.performCommand("menus");
+                    }
+                }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
         managerMenu.setButton(53, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {

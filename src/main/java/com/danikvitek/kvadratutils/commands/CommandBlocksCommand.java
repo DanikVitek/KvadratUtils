@@ -15,9 +15,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class CommandBlocksCommand implements CommandExecutor {
     private static final HashMap<UUID, Integer> pages = new HashMap<>();
@@ -43,18 +46,40 @@ public class CommandBlocksCommand implements CommandExecutor {
     }
 
     private void redrawMenu(Player player, Menu cbMenu, boolean reload) {
-        setPageControls(cbMenu, player);
-        setCBControls(cbMenu, player);
-        if (reload)
-            Main.getMenuHandler().reloadMenu(player);
-        else {
-            Main.getMenuHandler().closeMenu(player);
-            Main.getMenuHandler().openMenu(player, cbMenu);
-        }
+        final boolean[] future = { false };
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    List<ItemStack> allCBs = getAllCBs(player).get();
+
+                    setPageControls(cbMenu, player, allCBs);
+                    setCBControls(cbMenu, player, allCBs);
+                    future[0] = true;
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.runTaskAsynchronously(Main.getPlugin(Main.class));
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (future[0]) {
+                    if (reload)
+                        Main.getMenuHandler().reloadMenu(player);
+                    else {
+                        Main.getMenuHandler().closeMenu(player);
+                        Main.getMenuHandler().openMenu(player, cbMenu);
+                    }
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Main.getPlugin(Main.class), 0L, 1L);
     }
 
-    private void setCBControls(Menu cbMenu, Player player) {
-        List<ItemStack> blocksOnPage = PageUtil.getPageItems(getAllCBs(player), pages.get(player.getUniqueId()), 45);
+    private void setCBControls(Menu cbMenu, Player player, List<ItemStack> allCBs) {
+        List<ItemStack> blocksOnPage = PageUtil.getPageItems(allCBs, pages.get(player.getUniqueId()), 45);
         for (int i = 0; i < blocksOnPage.size(); i++) {
             ItemStack cb = blocksOnPage.get(i);
             String pos = ChatColor.stripColor(Objects.requireNonNull(Objects.requireNonNull(cb.getItemMeta()).getLore()).get(2)).substring(12);
@@ -72,7 +97,7 @@ public class CommandBlocksCommand implements CommandExecutor {
         }
     }
 
-    private void setPageControls(Menu cbMenu, Player player) {
+    private void setPageControls(Menu cbMenu, Player player, List<ItemStack> allCBs) {
         cbMenu.setButton(45, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
@@ -80,7 +105,7 @@ public class CommandBlocksCommand implements CommandExecutor {
                 pages.put(
                         player.getUniqueId(),
                         pages.get(player.getUniqueId()) == 0
-                                ? PageUtil.getMaxPages(getAllCBs(player), 45) - 1
+                                ? PageUtil.getMaxPages(allCBs, 45) - 1
                                 : pages.get(player.getUniqueId()) - 1);
                 redrawMenu(player, cbMenu, true);
             }
@@ -89,7 +114,7 @@ public class CommandBlocksCommand implements CommandExecutor {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                pages.put(player.getUniqueId(), (pages.get(player.getUniqueId()) + 1) % PageUtil.getMaxPages(getAllCBs(player), 45));
+                pages.put(player.getUniqueId(), (pages.get(player.getUniqueId()) + 1) % PageUtil.getMaxPages(allCBs, 45));
                 redrawMenu(player, cbMenu, true);
             }
         });
@@ -99,17 +124,25 @@ public class CommandBlocksCommand implements CommandExecutor {
                 event.setCancelled(true);
                 pages.remove(player.getUniqueId());
                 Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.performCommand("menus");
+                    }
+                }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
     }
 
-    private List<ItemStack> getAllCBs(Player player) {
+    private CompletableFuture<List<ItemStack>> getAllCBs(Player player) {
+        CompletableFuture<List<ItemStack>> allCBsCompletableFuture = new CompletableFuture<>();
+
         List<ItemStack> commandBlocks = new ArrayList<>();
         List<CommandBlockInstance> cbi = new ArrayList<>(CommandBlockInstance.getCommandBlockInstances());
 
         cbi.sort(Comparator.comparingDouble(cb -> cb.getPosition().distance(player.getLocation().toVector())));
 
-        for (CommandBlockInstance commandBlockInstance: cbi) {
+        for (CommandBlockInstance commandBlockInstance : cbi) {
             World world = Bukkit.getWorld(commandBlockInstance.getWorld());
             List<String> lore = new ArrayList<>(Arrays.asList(
                     ChatColor.GOLD + "Условность: " + ChatColor.YELLOW + (commandBlockInstance.isConditional() ? "Условный" : "Безусловный"),
@@ -128,7 +161,8 @@ public class CommandBlocksCommand implements CommandExecutor {
             }
             commandBlocks.add(new ItemBuilder(commandBlockInstance.getType()).setLore(lore).build());
         }
+        allCBsCompletableFuture.complete(commandBlocks);
 
-        return commandBlocks;
+        return allCBsCompletableFuture;
     }
 }

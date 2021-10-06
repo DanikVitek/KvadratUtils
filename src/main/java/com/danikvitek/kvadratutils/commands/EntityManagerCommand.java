@@ -117,6 +117,12 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 event.setCancelled(true);
                 pages.remove(player.getUniqueId());
                 Main.getMenuHandler().closeMenu(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.performCommand("menus");
+                    }
+                }.runTaskLater(Main.getPlugin(Main.class), 2L);
             }
         });
     }

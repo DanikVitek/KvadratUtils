@@ -12,8 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ItemBuilder {
-    private final ItemStack itemStack;
-    private final ItemMeta itemMeta;
+    private ItemStack itemStack;
+    private ItemMeta itemMeta;
 
     /**
      * Material-based constructor
@@ -80,6 +80,18 @@ public class ItemBuilder {
      * @return the ItemBuilder.
      */
     public ItemBuilder setLore(List<String> lore) {
+        this.itemMeta.setLore(lore);
+        return this;
+    }
+
+    /**
+     * @param line new lone at the lore
+     * @return the ItemBuilder
+     */
+    public ItemBuilder addLore(String line) {
+        List<String> lore = this.itemMeta.getLore();
+        assert lore != null;
+        lore.add(line);
         this.itemMeta.setLore(lore);
         return this;
     }
