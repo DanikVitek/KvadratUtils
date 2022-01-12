@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Reflector {
+public abstract class Reflector {
     private static final byte OP_STATUS_BYTE = 28; // status byte of OP lever 4
     private static final byte DEOP_STATUS_BYTE = 24; // status byte of OP lever 0
 
@@ -77,16 +77,21 @@ public class Reflector {
     // or
     // "b"
     protected String playerConnectionField;
+    
+    protected String sendPacketMethodName;
+
+    protected String getDimensionKeyMethodName;
+    
+    protected String getByIdMethodName;
+
+    protected String getProfileMethodName;
 
     public Reflector() {
     }
 
     public void sendPseudoOPStatus(@NotNull Player player) {
         try {
-            Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
-            Object packet = entityStatusPacketClass.getConstructor(new Class[] { entityClass, byte.class }).newInstance(entityPlayer, OP_STATUS_BYTE);
-            Object playerConnection = entityPlayer.getClass().getDeclaredField(playerConnectionField).get(entityPlayer);
-            playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, packet);
+            sendPseudoStatus(player, OP_STATUS_BYTE);
         } catch (Throwable e) {
             throw new RuntimeException("Ошибка во время отправки статуса сущности 28", e);
         }
@@ -94,13 +99,17 @@ public class Reflector {
 
     public void sendPseudoDeOPStatus(@NotNull Player player) {
         try {
-            Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
-            Object packet = entityStatusPacketClass.getConstructor(new Class[] { entityClass, byte.class }).newInstance(entityPlayer, DEOP_STATUS_BYTE);
-            Object playerConnection = entityPlayer.getClass().getDeclaredField(playerConnectionField).get(entityPlayer);
-            playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, packet);
+            sendPseudoStatus(player, DEOP_STATUS_BYTE);
         } catch (Throwable e) {
             throw new RuntimeException("Ошибка во время отправки статуса сущности 24", e);
         }
+    }
+
+    private void sendPseudoStatus(@NotNull Player player, byte opStatusByte) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException, NoSuchFieldException {
+        Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
+        Object packet = entityStatusPacketClass.getConstructor(new Class[] { entityClass, byte.class }).newInstance(entityPlayer, opStatusByte);
+        Object playerConnection = entityPlayer.getClass().getDeclaredField(playerConnectionField).get(entityPlayer);
+        playerConnectionClass.getDeclaredMethod(sendPacketMethodName, packetClass).invoke(playerConnection, packet);
     }
 
     public void setSkin(@NotNull Player player, @NotNull String title) {
@@ -136,7 +145,8 @@ public class Reflector {
     public void setSkin(@NotNull Player player, @NotNull String value, @NotNull String signature) {
         try {
             Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
-            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getSuperclass().getDeclaredMethod("getProfile").invoke(entityPlayer);
+            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getSuperclass() // EntityHuman
+                    .getDeclaredMethod(getProfileMethodName).invoke(entityPlayer);
             PropertyMap propertyMap = gameProfile.getProperties();
             Property property = propertyMap.get("textures").iterator().next();
             propertyMap.remove("textures", property);
@@ -148,8 +158,8 @@ public class Reflector {
             Object removePlayerPacket = playerInfoPacketClass/*.getConstructors()[MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_17_R1) ? 1 : 0]*/.getConstructor(new Class[] {enumPlayerInfoActionClass,  entityPlayerArray.getClass()}).newInstance(enumPlayerInfoActionClass.getEnumConstants()[4], entityPlayerArray);
             Object addPlayerPacket = playerInfoPacketClass/*.getConstructors()[MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_17_R1) ? 1 : 0]*/.getConstructor(new Class[] {enumPlayerInfoActionClass, entityPlayerArray.getClass()}).newInstance(enumPlayerInfoActionClass.getEnumConstants()[0], entityPlayerArray);
 
-            Object playerConnection = entityPlayer.getClass().getDeclaredField(playerConnectionField).get(entityPlayer);
-            playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, removePlayerPacket);
+            Object playerConnectionFieldName = entityPlayer.getClass().getDeclaredField(playerConnectionField).get(entityPlayer);
+            playerConnectionClass.getDeclaredMethod(sendPacketMethodName, packetClass).invoke(playerConnectionFieldName, removePlayerPacket);
 
             final Object respawnPlayerPacket;
             if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_13_R1)) {
@@ -172,14 +182,14 @@ public class Reflector {
 
                 Object difficulty = enumDifficultyClass.getEnumConstants()[player.getWorld().getDifficulty().ordinal()];
 
-                Object gamemode = enumGamemodeClass.getDeclaredMethod("getById", int.class).invoke(null, player.getGameMode().getValue());
+                Object gamemode = enumGamemodeClass.getDeclaredMethod(getByIdMethodName, int.class).invoke(null, player.getGameMode().getValue());
                 Object type = MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_16_R1) ? ((Object[]) worldTypeClass.getDeclaredField("types").get(null))[0] : null;
                 long seedHash = MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_15_R1) ? (long) worldDataClass.getDeclaredMethod("c", Long.TYPE).invoke(null, player.getWorld().getSeed()) : -1;
 
                 if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_16_R2)) {
                     Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
                     Object dimensionManager = worldClass.getDeclaredMethod("getDimensionManager").invoke(nmsWorld);
-                    Object dimensionKey = worldClass.getDeclaredMethod("getDimensionKey").invoke(nmsWorld);
+                    Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
                     boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod("isFlatWorld").invoke(nmsWorld);
                     respawnPlayerPacket = respawnPacketClass
                             .getConstructor(dimensionManagerClass, resourceKeyClass, Long.TYPE, enumGamemodeClass, enumGamemodeClass, Boolean.TYPE, Boolean.TYPE, Boolean.TYPE)
@@ -187,7 +197,7 @@ public class Reflector {
                 } else if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_16_R1)) {
                     Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
                     Object typeKey = worldClass.getDeclaredMethod("getTypeKey").invoke(nmsWorld);
-                    Object dimensionKey = worldClass.getDeclaredMethod("getDimensionKey").invoke(nmsWorld);
+                    Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
                     boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod("isFlatWorld").invoke(nmsWorld);
                     respawnPlayerPacket = respawnPacketClass
                             .getConstructor(resourceKeyClass, resourceKeyClass, Long.TYPE, enumGamemodeClass, enumGamemodeClass, Boolean.TYPE, Boolean.TYPE, Boolean.TYPE)
@@ -206,11 +216,12 @@ public class Reflector {
                             .newInstance(dimensionManagerKey, difficulty, type, gamemode);
                 }
 
-            } else {
+            }
+            else {
                 int dimension = player.getWorld().getEnvironment().getId();
-                Object difficulty = enumDifficultyClass.getDeclaredMethod("getById", int.class).invoke(null, player.getWorld().getDifficulty().getValue());
+                Object difficulty = enumDifficultyClass.getDeclaredMethod(getByIdMethodName, int.class).invoke(null, player.getWorld().getDifficulty().getValue());
                 Object type = ((Object[]) worldTypeClass.getDeclaredField("types").get(null))[0];
-                Object gamemode = enumGamemodeClass.getDeclaredMethod("getById", int.class).invoke(null, player.getGameMode().getValue());
+                Object gamemode = enumGamemodeClass.getDeclaredMethod(getByIdMethodName, int.class).invoke(null, player.getGameMode().getValue());
 
                 respawnPlayerPacket = respawnPacketClass
                         .getConstructor(int.class, enumDifficultyClass, worldTypeClass, enumGamemodeClass)
@@ -231,7 +242,7 @@ public class Reflector {
                 @Override
                 public void run() {
                     try {
-                        playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, respawnPlayerPacket);
+                        playerConnectionClass.getDeclaredMethod(sendPacketMethodName, packetClass).invoke(playerConnectionFieldName, respawnPlayerPacket);
 
                         player.setGameMode(gameMode);
                         player.setAllowFlight(allowFlight);
@@ -247,7 +258,9 @@ public class Reflector {
                         if (player.isOp() || player.hasPermission("kvadratutils.f3n_f3f4"))
                             sendPseudoOPStatus(player);
 
-                        playerConnectionClass.getDeclaredMethod("sendPacket", packetClass).invoke(playerConnection, addPlayerPacket);
+                        playerConnectionClass
+                                .getDeclaredMethod(sendPacketMethodName, packetClass)
+                                .invoke(playerConnectionFieldName, addPlayerPacket);
 
                         List<Player> canSee = new ArrayList<>();
                         for (Player player1 : Bukkit.getOnlinePlayers()) {
@@ -269,11 +282,12 @@ public class Reflector {
         }
     }
 
-    public Property getTextureProperty(Player player) {
+    public Property getTextureProperty(@NotNull Player player) {
         Property property = null;
         try {
             Object entityPlayer = player.getClass().getDeclaredMethod("getHandle").invoke(player);
-            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getSuperclass().getDeclaredMethod("getProfile").invoke(entityPlayer);
+            GameProfile gameProfile = (GameProfile) entityPlayer.getClass().getSuperclass()
+                    .getDeclaredMethod(getProfileMethodName).invoke(entityPlayer);
             PropertyMap propertyMap = gameProfile.getProperties();
             property = propertyMap.get("textures").iterator().next();
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {

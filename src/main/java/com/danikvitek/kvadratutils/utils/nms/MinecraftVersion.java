@@ -1,5 +1,6 @@
 package com.danikvitek.kvadratutils.utils.nms;
 
+import com.danikvitek.kvadratutils.Main;
 import org.bukkit.Bukkit;
 
 import java.util.Arrays;
@@ -10,7 +11,10 @@ public class MinecraftVersion {
 
     static {
         String namespace = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        VERSION = Arrays.stream(VersionEnum.values()).map(Enum::toString).collect(Collectors.toList()).contains(namespace) ? VersionEnum.valueOf(namespace) : VersionEnum.v1_17_R1;
+        VERSION = Arrays.stream(VersionEnum.values()).map(Enum::toString).collect(Collectors.toList()).contains(namespace)
+                ? VersionEnum.valueOf(namespace)
+                : VersionEnum.v1_17_R1;
+        Main.log("Version: " + VERSION);
     }
 
     public enum VersionEnum {
@@ -40,7 +44,8 @@ public class MinecraftVersion {
         v1_16_R2(11602),
         v1_16_R3(11603),
 
-        v1_17_R1(11701);
+        v1_17_R1(11701),
+        v1_18_R1(11801);
 
         private final int index;
 
