@@ -66,7 +66,7 @@ public class SkinSelectCommand implements CommandExecutor {
         }
     }
 
-    private static void setPageControls(Player player, Menu skinMenu, List<ItemStack> skinIcons) {
+    private static void setPageControls(Player player, @NotNull Menu skinMenu, List<ItemStack> skinIcons) {
         skinMenu.setButton(45, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
@@ -99,7 +99,7 @@ public class SkinSelectCommand implements CommandExecutor {
         });
     }
 
-    private static void setSkinIcons(Player player, Menu skinMenu, List<ItemStack> skinIcons) {
+    private static void setSkinIcons(@NotNull Player player, Menu skinMenu, List<ItemStack> skinIcons) {
         List<ItemStack> pageIcons = PageUtil.getPageItems(skinIcons, pages.get(player.getUniqueId()), 45);
         for (int i = 0; i < pageIcons.size(); i++) {
             int _i = i;
@@ -157,7 +157,7 @@ public class SkinSelectCommand implements CommandExecutor {
         return Main.makeExecuteQuery(
                 new QueryBuilder().select(Main.skinsTableName).what("Name, Skin_Value").from().build(),
                 new HashMap<>(),
-                (args, skinsResultSet) -> {
+                skinsResultSet -> {
                     List<ItemStack> result = new ArrayList<>();
                     try {
                         while (skinsResultSet.next()) {
@@ -179,8 +179,7 @@ public class SkinSelectCommand implements CommandExecutor {
                         e.printStackTrace();
                     }
                     return result;
-                },
-                null
+                }
         );
     }
 

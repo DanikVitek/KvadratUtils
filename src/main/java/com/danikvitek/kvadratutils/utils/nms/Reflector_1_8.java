@@ -10,6 +10,12 @@ public class Reflector_1_8 extends Reflector {
         this.entityClass = Class.forName("net.minecraft.server." + namespace + ".Entity");
         this.packetClass = Class.forName("net.minecraft.server." + namespace + ".Packet");
         this.playerConnectionField = "playerConnection";
+        this.sendPacketMethodName = "sendPacket";
+        this.getDimensionKeyMethodName = "getDimensionKey";
+        this.getByIdMethodName = "getById";
+        this.getProfileMethodName = "getProfile";
+        this.getDimensionManagerMethodName = "getDimensionManager";
+        this.isFlatWorldMethodName = "isFlatWorld";
 
         this.playerInfoPacketClass = Class.forName("net.minecraft.server." + namespace + ".PacketPlayOutPlayerInfo");
         this.enumPlayerInfoActionClass = Class.forName("net.minecraft.server." + namespace + ".PacketPlayOutPlayerInfo").getClasses()[1]; // .EnumPlayerInfoAction

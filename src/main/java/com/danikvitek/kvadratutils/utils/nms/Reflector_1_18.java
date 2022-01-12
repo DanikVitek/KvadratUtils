@@ -1,18 +1,18 @@
 package com.danikvitek.kvadratutils.utils.nms;
 
-public class Reflector_1_17 extends Reflector {
-    public Reflector_1_17() throws ClassNotFoundException {
+public class Reflector_1_18 extends Reflector {
+    public Reflector_1_18() throws ClassNotFoundException {
         this.entityStatusPacketClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutEntityStatus");
         this.playerConnectionClass = Class.forName("net.minecraft.server.network.PlayerConnection");
         this.entityClass = Class.forName("net.minecraft.world.entity.Entity");
         this.packetClass = Class.forName("net.minecraft.network.protocol.Packet");
         this.playerConnectionField = "b";
-        this.sendPacketMethodName = "sendPacket";
-        this.getDimensionKeyMethodName = "getDimensionKey";
-        this.getByIdMethodName = "getById";
-        this.getProfileMethodName = "getProfile";
-        this.getDimensionManagerMethodName = "getDimensionManager";
-        this.isFlatWorldMethodName = "isFlatWorld";
+        this.sendPacketMethodName = "a";
+        this.getDimensionKeyMethodName = "aa";
+        this.getByIdMethodName = "a";
+        this.getProfileMethodName = "fp";
+        this.getDimensionManagerMethodName = "q_";
+        this.isFlatWorldMethodName = "D";
 
         this.playerInfoPacketClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo");
         this.enumPlayerInfoActionClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo").getClasses()[0]; // .EnumPlayerInfoAction

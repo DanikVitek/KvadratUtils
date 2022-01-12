@@ -26,7 +26,7 @@ public class RefCommandExecutor implements TabExecutor {
                                 .where("Alias = '" + args[0] + "'")
                                 .build(),
                         new HashMap<>(),
-                        (a, commandsResultSet) -> {
+                        commandsResultSet -> {
                             try {
                                 if (commandsResultSet.next())
                                     return commandsResultSet.getString(1);
@@ -34,8 +34,7 @@ public class RefCommandExecutor implements TabExecutor {
                                 e.printStackTrace();
                             }
                             return null;
-                        },
-                        null
+                        }
                 );
                 if (commandReference != null) {
                     Bukkit.dispatchCommand(sender, commandReference + " " + Arrays.stream(args).skip(1L).collect(Collectors.joining(" ")));
@@ -56,7 +55,7 @@ public class RefCommandExecutor implements TabExecutor {
             return copyPartialInnerMatches(args[0], Objects.requireNonNull(Main.makeExecuteQuery(new QueryBuilder().select(Main.refCommandsTableName)
                             .what("Alias").from().build(),
                     new HashMap<>(),
-                    (a, aliasesResultSet) -> {
+                    aliasesResultSet -> {
                         ArrayList<String> tabCompleteResult = new ArrayList<>();
                         try {
                             while (aliasesResultSet.next()) {
@@ -66,8 +65,7 @@ public class RefCommandExecutor implements TabExecutor {
                             e.printStackTrace();
                         }
                         return tabCompleteResult;
-                    },
-                    null)));
+                    })));
         }
         return null;
     }

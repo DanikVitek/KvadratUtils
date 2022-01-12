@@ -233,12 +233,22 @@ public class ManagePermissionsCommand implements CommandExecutor {
                             new ItemBuilder(MenusCommand.SKIN_MENU_ICON.clone()).setDisplayName(ChatColor.GOLD + "Удалять скины").setLore("", ChatColor.YELLOW + "kvadratutils.command.skin.delete").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову блоки").setLore("", ChatColor.YELLOW + "hat.blocks").build(),
                             new ItemBuilder(Material.CARVED_PUMPKIN).setDisplayName(ChatColor.GOLD + "Надевать на голову предметы").setLore("", ChatColor.YELLOW + "hat.items").build(),
-                            new ItemBuilder(Material.PHANTOM_MEMBRANE).setDisplayName(ChatColor.GOLD + "Открывать /cmenu").setLore("", ChatColor.YELLOW + "cmenu.show").build()
+                            new ItemBuilder(Material.PHANTOM_MEMBRANE).setDisplayName(ChatColor.GOLD + "Открывать /cmenu").setLore("", ChatColor.YELLOW + "cmenu.show").build(),
+                            new ItemBuilder(earthHead()).setDisplayName(ChatColor.GOLD + "WorldEdit //set").setLore("", ChatColor.YELLOW + "worldedit.region.set").build(),
+                            new ItemBuilder(earthHead()).setDisplayName(ChatColor.GOLD + "WorldEdit //replace").setLore("", ChatColor.YELLOW + "worldedit.region.replace").build(),
+                            new ItemBuilder(earthHead()).setDisplayName(ChatColor.GOLD + "WorldEdit *").setLore("", ChatColor.YELLOW + "worldedit.*").build(),
+                            new ItemBuilder(earthHead()).setDisplayName(ChatColor.GOLD + "FastAsyncWorldEdit *").setLore("", ChatColor.YELLOW + "fawe.*").build(),
+                            new ItemBuilder(Material.DEBUG_STICK).setDisplayName(ChatColor.GOLD + "Debug stick").setLore("", ChatColor.YELLOW + "minecraft.debugstick").build()
                             // todo: add more
                     );
                 }
             });
         }
+    }
+
+    private static ItemStack earthHead() {
+        return new ItemBuilder(MenusCommand.getSetSkinIcon("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzljODg4MWU0MjkxNWE5ZDI5YmI2MWExNmZiMjZkMDU5OTEzMjA0ZDI2NWRmNWI0MzliM2Q3OTJhY2Q1NiJ9fX0="))
+                .build();
     }
 
     // 45, 49, 53

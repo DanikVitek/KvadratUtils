@@ -7,9 +7,7 @@ import com.danikvitek.kvadratutils.utils.CustomConfigManager;
 import com.danikvitek.kvadratutils.utils.QueryBuilder;
 import com.danikvitek.kvadratutils.utils.annotations.ConfigVar;
 import com.danikvitek.kvadratutils.utils.gui.MenuHandler;
-import com.danikvitek.kvadratutils.utils.nms.Reflector;
-import com.danikvitek.kvadratutils.utils.nms.Reflector_1_17;
-import com.danikvitek.kvadratutils.utils.nms.Reflector_1_8;
+import com.danikvitek.kvadratutils.utils.nms.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -43,10 +41,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class Main extends JavaPlugin implements Listener {
+    private static final Logger logger = Bukkit.getLogger();
+
+    public static void log(String message) {
+        logger.info(String.format("[%s] %s", Main.getPlugin(Main.class).getName(), message));
+    }
+
     @ConfigVar("MineSkin-API.key")
     private static String API_KEY;
     @ConfigVar("MineSkin-API.user-agent")
@@ -155,17 +161,44 @@ public final class Main extends JavaPlugin implements Listener {
         initTables();
 
         // Multi-version
-        try {
-            reflector = new Reflector_1_8();
-        } catch (ClassNotFoundException | NoClassDefFoundError e1) {
-            try {
-                getLogger().log(Level.ALL, e1.getMessage());
-                reflector = new Reflector_1_17();
-            } catch (ClassNotFoundException | NoClassDefFoundError e2) {
-                getLogger().log(Level.ALL, e2.getMessage());
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Не удалось загрузить плагин для этой версии (" + Bukkit.getVersion() + ")");
-                Bukkit.getPluginManager().disablePlugin(this);
-            }
+        switch (MinecraftVersion.VERSION) {
+
+            case v1_8_R1:
+            case v1_8_R2:
+            case v1_8_R3:
+            case v1_8_R4:
+            case v1_9_R1:
+            case v1_9_R2:
+            case v1_10_R1:
+            case v1_11_R1:
+            case v1_12_R1:
+            case v1_13_R1:
+            case v1_13_R2:
+            case v1_14_R1:
+            case v1_15_R1:
+            case v1_16_R1:
+            case v1_16_R2:
+            case v1_16_R3:
+                try {
+                    reflector = new Reflector_1_8();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case v1_17_R1:
+                try {
+                    reflector = new Reflector_1_17();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case v1_18_R1:
+                try {
+                    reflector = new Reflector_1_18();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
 
         for (Player player: Bukkit.getOnlinePlayers()) {
@@ -331,7 +364,7 @@ public final class Main extends JavaPlugin implements Listener {
         return true;
     }
 
-    public static @Nullable <T> T makeExecuteQuery(String query, HashMap<Integer, ?> values, @Nullable BiFunction<List<?>, ResultSet, T> function, @Nullable List<?> args) {
+    public static @Nullable <T> T makeExecuteQuery(String query, HashMap<Integer, ?> values, @Nullable Function<ResultSet, T> function) {
         Connection conn = getConnection();
         T result = null;
         if (conn != null) {
@@ -341,7 +374,7 @@ public final class Main extends JavaPlugin implements Listener {
                     ps.setObject(value.getKey(), value.getValue());
                 ResultSet rs = ps.executeQuery();
                 if (function != null)
-                    result = function.apply(args, rs);
+                    result = function.apply(rs);
                 conn.close();
             } catch (SQLException e) {
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "QUERY: " + query);
@@ -371,7 +404,7 @@ public final class Main extends JavaPlugin implements Listener {
         makeExecute(createTableQuery, new HashMap<>());
 
         makeExecuteQuery(new QueryBuilder().select(worldsTableName).what("*").from().build(), new HashMap<>(),
-                (args, rs) -> {
+                rs -> {
                     if (rs != null) {
                         try {
                             if (!rs.next()) {
@@ -393,8 +426,7 @@ public final class Main extends JavaPlugin implements Listener {
                         }
                     }
                     return false;
-                },
-                null);
+                });
     }
 
     private static void createCBTable() {
