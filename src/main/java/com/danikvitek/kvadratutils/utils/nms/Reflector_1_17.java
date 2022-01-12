@@ -12,6 +12,7 @@ public class Reflector_1_17 extends Reflector {
         this.getByIdMethodName = "getById";
         this.getProfileMethodName = "getProfile";
         this.getDimensionManagerMethodName = "getDimensionManager";
+        this.isFlatWorldMethodName = "isFlatWorld";
 
         this.playerInfoPacketClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo");
         this.enumPlayerInfoActionClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo").getClasses()[0]; // .EnumPlayerInfoAction

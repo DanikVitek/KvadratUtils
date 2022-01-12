@@ -88,6 +88,9 @@ public abstract class Reflector {
     
     protected String getDimensionManagerMethodName;
 
+    protected String isFlatWorldMethodName;
+
+
     public Reflector() {
     }
 
@@ -192,7 +195,7 @@ public abstract class Reflector {
                     Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
                     Object dimensionManager = worldClass.getDeclaredMethod(getDimensionManagerMethodName).invoke(nmsWorld);
                     Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
-                    boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod("isFlatWorld").invoke(nmsWorld);
+                    boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod(isFlatWorldMethodName).invoke(nmsWorld);
                     respawnPlayerPacket = respawnPacketClass
                             .getConstructor(dimensionManagerClass, resourceKeyClass, Long.TYPE, enumGamemodeClass, enumGamemodeClass, Boolean.TYPE, Boolean.TYPE, Boolean.TYPE)
                             .newInstance(dimensionManager, dimensionKey, seedHash, gamemode, gamemode, false/*isDebugWorld*/, isFlatWorld, true/*keepAllPlayerData*/);
@@ -200,7 +203,7 @@ public abstract class Reflector {
                     Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
                     Object typeKey = worldClass.getDeclaredMethod("getTypeKey").invoke(nmsWorld);
                     Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
-                    boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod("isFlatWorld").invoke(nmsWorld);
+                    boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod(isFlatWorldMethodName).invoke(nmsWorld);
                     respawnPlayerPacket = respawnPacketClass
                             .getConstructor(resourceKeyClass, resourceKeyClass, Long.TYPE, enumGamemodeClass, enumGamemodeClass, Boolean.TYPE, Boolean.TYPE, Boolean.TYPE)
                             .newInstance(typeKey, dimensionKey, seedHash, gamemode, gamemode, false/*isDebugWorld*/, isFlatWorld, true/*keepAllPlayerData*/);
