@@ -157,7 +157,7 @@ public class SkinSelectCommand implements CommandExecutor {
         return Main.makeExecuteQuery(
                 new QueryBuilder().select(Main.skinsTableName).what("Name, Skin_Value").from().build(),
                 new HashMap<>(),
-                (args, skinsResultSet) -> {
+                skinsResultSet -> {
                     List<ItemStack> result = new ArrayList<>();
                     try {
                         while (skinsResultSet.next()) {
@@ -179,8 +179,7 @@ public class SkinSelectCommand implements CommandExecutor {
                         e.printStackTrace();
                     }
                     return result;
-                },
-                null
+                }
         );
     }
 

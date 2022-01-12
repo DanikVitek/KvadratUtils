@@ -113,7 +113,7 @@ public class Reflector {
                         .where("Name = '" + title + "'")
                         .build(),
                 new HashMap<>(),
-                (args, skinResultSet) -> {
+                skinResultSet -> {
                     try {
                         if (skinResultSet.next()) {
                             value.set(skinResultSet.getString(1));
@@ -123,7 +123,7 @@ public class Reflector {
                         e.printStackTrace();
                     }
                     return null;
-                }, null);
+                });
 
         if (value.get() != null && signature.get() != null) {
             setSkin(player, value.get(), signature.get());

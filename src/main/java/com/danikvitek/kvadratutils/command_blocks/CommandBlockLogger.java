@@ -65,7 +65,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
             Integer worldID = Main.makeExecuteQuery(
                     new QueryBuilder().select(Main.worldsTableName).what("ID").from().where("UUID = ?").build(),
                     values,
-                    (args, worldsResultSet) -> {
+                    worldsResultSet -> {
                         try {
                             if (worldsResultSet.next())
                                 return worldsResultSet.getInt(1);
@@ -74,8 +74,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                             e.printStackTrace();
                             return null;
                         }
-                    },
-                    null
+                    }
             );
             if (worldID != null)
                 Main.makeExecuteUpdate("DELETE FROM " + Main.cbTableName + " WHERE World_ID = '" + worldID + "' AND Location = '" + location + "';", new HashMap<>());
@@ -101,7 +100,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                 AtomicBoolean isSaved = new AtomicBoolean(false);
                 Main.makeExecuteQuery(
                         new QueryBuilder().select(Main.cbTableName).what("*").from().build(), new HashMap<>(),
-                        (args, rs) -> {
+                        rs -> {
                             if (rs != null) {
                                 int worldID;
                                 long location;
@@ -121,8 +120,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                 return true;
                             }
                             return false;
-                        },
-                        null);
+                        });
                 if (!isSaved.get()) saveCommandBlock(block);
             }
             new CommandBlockInstance(block.getLocation(), true);
@@ -148,7 +146,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                 .from()
                                 .where("UUID = ?")
                                 .build(), values,
-                        (args, worldResultSet) -> {
+                        worldResultSet -> {
                             if (worldResultSet != null) { // worldResultSet - ID of resulting world
                                 try {
                                     worldResultSet.next();
@@ -158,7 +156,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                                     .where("World_ID = '" + worldResultSet.getInt(1) + "' AND Location = '" + location + "'")
                                                     .build(),
                                             new HashMap<>(),
-                                            (args1, cbResultSet) -> {
+                                            cbResultSet -> {
                                                 try {
                                                     if (!cbResultSet.next()) {
                                                         Main.makeExecuteUpdate(new QueryBuilder().insert(Main.cbTableName) // insert cb in table with world_id and location
@@ -172,8 +170,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                                     e.printStackTrace();
                                                 }
                                                 return false;
-                                            },
-                                            null
+                                            }
                                     );
                                 } catch (SQLException e) {
                                     e.printStackTrace();
@@ -181,7 +178,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                 return true;
                             }
                             return false;
-                        }, null);
+                        });
             }
         }.runTaskAsynchronously(Main.getPlugin(Main.class));
     }
@@ -200,7 +197,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                         .from()
                         .where("World_ID = '" + worldID + "' AND Location = '" + location + "'")
                         .build(), new HashMap<>(),
-                (args, cbResultSet) -> {
+                cbResultSet -> {
                     if (cbResultSet != null) {
                         try {
                             if (cbResultSet.next()) {
@@ -210,23 +207,25 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                                 .from()
                                                 .where("ID = '" + cbResultSet.getInt(1) + "'")
                                                 .build(), new HashMap<>(),
-                                        (args1, worldResultSet) -> {
+                                        worldResultSet -> {
                                             if (worldResultSet != null) {
                                                 try {
-                                                    worldResultSet.next();
-                                                    World world = Bukkit.getWorld(Converter.uuidFromBytes(worldResultSet.getBytes(1)));
-                                                    long longLocation = cbResultSet.getLong(2);
-                                                    Location loc = Converter.locationFromLong(world, longLocation);
-                                                    int chunkX = loc.getBlockX() % 16 < 0 ? (loc.getBlockX() % 16) + 16 : loc.getBlockX() % 16,
-                                                        chunkY = loc.getBlockY() > 255 ? 255 : Math.max(loc.getBlockY(), 0),
-                                                        chunkZ = loc.getBlockZ() % 16 < 0 ? (loc.getBlockZ() % 16) + 16 : loc.getBlockZ() % 16;
-                                                    return PaperLib.getChunkAtAsync(loc).get().getBlock(chunkX, chunkY, chunkZ);
+                                                    if (worldResultSet.next()) {
+                                                        World world = Bukkit.getWorld(Converter.uuidFromBytes(worldResultSet.getBytes(1)));
+                                                        long longLocation = cbResultSet.getLong(2);
+                                                        Location loc = Converter.locationFromLong(world, longLocation);
+                                                        int chunkX = loc.getBlockX() % 16 < 0 ? (loc.getBlockX() % 16) + 16 : loc.getBlockX() % 16,
+                                                                chunkY = loc.getBlockY() > 255 ? 255 : Math.max(loc.getBlockY(), 0),
+                                                                chunkZ = loc.getBlockZ() % 16 < 0 ? (loc.getBlockZ() % 16) + 16 : loc.getBlockZ() % 16;
+                                                        return PaperLib.getChunkAtAsync(loc).get().getBlock(chunkX, chunkY, chunkZ);
+                                                    }
+                                                    return null;
                                                 } catch (SQLException | ExecutionException | InterruptedException e) {
                                                     e.printStackTrace();
                                                     return null;
                                                 }
                                             } else return null;
-                                        }, null);
+                                        });
                             } else
                                 throw new IllegalArgumentException("Нет командного блока с такими World_ID и Location (" + worldID + ", " + location + ")");
                         } catch (SQLException e) {
@@ -234,6 +233,6 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                             return null;
                         }
                     } else return null;
-                }, null);
+                });
     }
 }

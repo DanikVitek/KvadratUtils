@@ -26,7 +26,9 @@ public class MenusCommand implements CommandExecutor {
     public static final ItemStack SKIN_MENU_ICON;
 
     static {
-        SKIN_MENU_ICON = getSetSkinIcon();
+        SKIN_MENU_ICON = new ItemBuilder(getSetSkinIcon( "ewogICJ0aW1lc3RhbXAiIDogMTYzMTc5ODQwNTUzMiwKICAicHJvZmlsZUlkIiA6ICI4MGFiMWFkMTgyMzU0NDFkYjhlYTMzNzQ2OTZkMWU0YSIsCiAgInByb2ZpbGVOYW1lIiA6ICJWZW50b3JfUHJveHkiLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDViMWVlYmIwNWE3MWY0NmM2ZjY2OTBmNjk5NzU1NTExMWQ5ZWQ1YzViZTFlNjgyODk0NDZkMTg5ZjdlMWFiYyIKICAgIH0KICB9Cn0="))
+                .setDisplayName("Установить скин")
+                .build();
     }
 
     @Override
@@ -103,11 +105,11 @@ public class MenusCommand implements CommandExecutor {
         return true;
     }
 
-    private static ItemStack getSetSkinIcon() {
-        ItemStack skinSelectPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("Установить скин").build();
+    public static ItemStack getSetSkinIcon(String value) {
+        ItemStack skinSelectPlayerHead = new ItemBuilder(Material.PLAYER_HEAD).build();
         SkullMeta meta = (SkullMeta) skinSelectPlayerHead.getItemMeta();
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-        profile.getProperties().put("textures", new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTYzMTc5ODQwNTUzMiwKICAicHJvZmlsZUlkIiA6ICI4MGFiMWFkMTgyMzU0NDFkYjhlYTMzNzQ2OTZkMWU0YSIsCiAgInByb2ZpbGVOYW1lIiA6ICJWZW50b3JfUHJveHkiLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDViMWVlYmIwNWE3MWY0NmM2ZjY2OTBmNjk5NzU1NTExMWQ5ZWQ1YzViZTFlNjgyODk0NDZkMTg5ZjdlMWFiYyIKICAgIH0KICB9Cn0="));
+        profile.getProperties().put("textures", new Property("textures", value));
 
         Field field;
         try {

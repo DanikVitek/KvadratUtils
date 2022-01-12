@@ -43,6 +43,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -331,7 +332,7 @@ public final class Main extends JavaPlugin implements Listener {
         return true;
     }
 
-    public static @Nullable <T> T makeExecuteQuery(String query, HashMap<Integer, ?> values, @Nullable BiFunction<List<?>, ResultSet, T> function, @Nullable List<?> args) {
+    public static @Nullable <T> T makeExecuteQuery(String query, HashMap<Integer, ?> values, @Nullable Function<ResultSet, T> function) {
         Connection conn = getConnection();
         T result = null;
         if (conn != null) {
@@ -341,7 +342,7 @@ public final class Main extends JavaPlugin implements Listener {
                     ps.setObject(value.getKey(), value.getValue());
                 ResultSet rs = ps.executeQuery();
                 if (function != null)
-                    result = function.apply(args, rs);
+                    result = function.apply(rs);
                 conn.close();
             } catch (SQLException e) {
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "QUERY: " + query);
@@ -371,7 +372,7 @@ public final class Main extends JavaPlugin implements Listener {
         makeExecute(createTableQuery, new HashMap<>());
 
         makeExecuteQuery(new QueryBuilder().select(worldsTableName).what("*").from().build(), new HashMap<>(),
-                (args, rs) -> {
+                rs -> {
                     if (rs != null) {
                         try {
                             if (!rs.next()) {
@@ -393,8 +394,7 @@ public final class Main extends JavaPlugin implements Listener {
                         }
                     }
                     return false;
-                },
-                null);
+                });
     }
 
     private static void createCBTable() {

@@ -155,7 +155,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                                 .where("Player = ?")
                                                 .build(),
                                         values,
-                                        (a, skinResultSet) -> {
+                                        skinResultSet -> {
                                             try {
                                                 if (skinResultSet.next()) {
                                                     Main.makeExecuteUpdate(
@@ -173,8 +173,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                                 e.printStackTrace();
                                                 return false;
                                             }
-                                        },
-                                        null
+                                        }
                                 )))
                                     sender.sendMessage(ChatColor.GREEN + "Скин указанного игрока успешно скопирован в БД общедоступных скинов");
                                 else
@@ -270,7 +269,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                                 .where("Player = ?")
                                                 .build(),
                                         values,
-                                        (a, skinResultSet) -> {
+                                        skinResultSet -> {
                                             try {
                                                 if (skinResultSet.next()) {
                                                     Main.makeExecuteUpdate(
@@ -288,8 +287,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                                 e.printStackTrace();
                                                 return false;
                                             }
-                                        },
-                                        null
+                                        }
                                 )))
                                     sender.sendMessage(ChatColor.GREEN + "Скин указанного игрока успешно скопирован в БД общедоступных скинов");
                                 else
@@ -322,7 +320,7 @@ public class SkinCommand implements TabExecutor, Listener {
         return Main.makeExecuteQuery(
                 "SELECT Name FROM " + Main.skinsTableName + ";",
                 new HashMap<>(),
-                (args, skinsResultSet) -> {
+                skinsResultSet -> {
                     List<String> result = new ArrayList<>();
                     try {
                         while (skinsResultSet.next())
@@ -332,7 +330,7 @@ public class SkinCommand implements TabExecutor, Listener {
                         return null;
                     }
                     return result;
-                }, null);
+                });
     }
 
     @SuppressWarnings("deprecation")
@@ -398,7 +396,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                     .where("Skin_Name = '" + title + "'")
                                     .build(),
                             new HashMap<>(),
-                            (args, playersResultSet) -> {
+                            playersResultSet -> {
                                 try {
                                     while (playersResultSet.next()) {
                                         Player player = Bukkit.getPlayer(Converter.uuidFromBytes(playersResultSet.getBytes(1)));
@@ -411,8 +409,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                     e.printStackTrace();
                                 }
                                 return null;
-                            },
-                            null
+                            }
                     );
                     return true;
                 }
@@ -487,7 +484,7 @@ public class SkinCommand implements TabExecutor, Listener {
                         .select(Main.skinRelationTableName)
                         .what("Player").from().where("Skin_Name = '" + title + "'").build(),
                 new HashMap<>(),
-                (args, playersResultSet) -> {
+                playersResultSet -> {
                     List<UUID> playersUUIDs = new ArrayList<>();
                     try {
                         while (playersResultSet.next())
@@ -496,8 +493,7 @@ public class SkinCommand implements TabExecutor, Listener {
                         e.printStackTrace();
                     }
                     return playersUUIDs;
-                },
-                null);
+                });
         Main.makeExecuteUpdate(
                 "DELETE FROM " + Main.skinRelationTableName + " WHERE Skin_Name = '" + title + "';",
                 new HashMap<>());
@@ -528,7 +524,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                 .where("Player = ?")
                                 .build(),
                         values,
-                        (args, skinNameResultSet) -> {
+                        skinNameResultSet -> {
                             try {
                                 if (skinNameResultSet.next())
                                     return skinNameResultSet.getString(1);
@@ -537,8 +533,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                 return null;
                             }
                             return null;
-                        },
-                        null
+                        }
                 );
                 if (Boolean.FALSE.equals(Main.makeExecuteQuery(
                         new QueryBuilder().select(Main.skinsTableName)
@@ -547,15 +542,14 @@ public class SkinCommand implements TabExecutor, Listener {
                                 .where("Name = '" + title + "'")
                                 .build(),
                         new HashMap<>(),
-                        (args, rs) -> {
+                        rs -> {
                             try {
                                 return rs.next();
                             } catch (SQLException e) {
                                 e.printStackTrace();
                                 return false;
                             }
-                        },
-                        null))) {
+                        }))) {
                     title = null;
                     resetSkinRelation(player);
                 }
@@ -606,7 +600,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                     .where("Player = ?")
                                     .build(),
                             values,
-                            (args, skinResultSet) -> {
+                            skinResultSet -> {
                                 try {
                                     if (skinResultSet.next()) {
                                         value.set(skinResultSet.getString(1));
@@ -616,8 +610,7 @@ public class SkinCommand implements TabExecutor, Listener {
                                     e.printStackTrace();
                                 }
                                 return null;
-                            },
-                            null);
+                            });
 
                     if (value.get() == null || signature.get() == null) {
                         Connection.Response response = Jsoup
