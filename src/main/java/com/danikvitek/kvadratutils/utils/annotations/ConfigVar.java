@@ -37,9 +37,9 @@ public @interface ConfigVar {
                         try {
                             f.setAccessible(true);
 
-                            if (!Main.getPlugin(Main.class).getDataFolder().exists())
-                                Main.getPlugin(Main.class).getDataFolder().mkdirs();
-                            File configFile = new File(Main.getPlugin(Main.class).getDataFolder(), f.getAnnotation(ConfigVar.class).file_name());
+                            if (!Main.getInstance().getDataFolder().exists())
+                                Main.getInstance().getDataFolder().mkdirs();
+                            File configFile = new File(Main.getInstance().getDataFolder(), f.getAnnotation(ConfigVar.class).file_name());
                             if (!configFile.exists())
                                 configFile.createNewFile();
                             YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);

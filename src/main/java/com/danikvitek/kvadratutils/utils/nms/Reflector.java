@@ -10,6 +10,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,6 +60,9 @@ public abstract class Reflector {
 
     protected Class<?> dimensionManagerClass;
 
+    protected Class<?> holderClass;
+    protected Class<?> holderAClass;
+
     protected Class<?> enumDifficultyClass;
 
     protected Class<?> enumGamemodeClass;
@@ -77,15 +81,15 @@ public abstract class Reflector {
     // or
     // "b"
     protected String playerConnectionField;
-    
+
     protected String sendPacketMethodName;
 
     protected String getDimensionKeyMethodName;
-    
+
     protected String getByIdMethodName;
 
     protected String getProfileMethodName;
-    
+
     protected String getDimensionManagerMethodName;
 
     protected String isFlatWorldMethodName;
@@ -121,7 +125,7 @@ public abstract class Reflector {
         AtomicReference<String> value = new AtomicReference<>();
         AtomicReference<String> signature = new AtomicReference<>();
         Main.makeExecuteQuery(
-                new QueryBuilder().select(Main.skinsTableName)
+                new QueryBuilder().select(Main.SKINS_TABLE_NAME)
                         .what("Skin_Value, Skin_Signature")
                         .from()
                         .where("Name = '" + title + "'")
@@ -191,7 +195,16 @@ public abstract class Reflector {
                 Object type = MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_16_R1) ? ((Object[]) worldTypeClass.getDeclaredField("types").get(null))[0] : null;
                 long seedHash = MinecraftVersion.VERSION.olderThan(MinecraftVersion.VersionEnum.v1_15_R1) ? (long) worldDataClass.getDeclaredMethod("c", Long.TYPE).invoke(null, player.getWorld().getSeed()) : -1;
 
-                if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_16_R2)) {
+                if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_18_R1)) {
+                    Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
+                    Object dimensionManager = worldClass.getDeclaredMethod(getDimensionManagerMethodName).invoke(nmsWorld);
+                    Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
+                    boolean isFlatWorld = (boolean) worldServerClass.getDeclaredMethod(isFlatWorldMethodName).invoke(nmsWorld);
+                    respawnPlayerPacket = respawnPacketClass
+                            .getConstructor(holderClass, resourceKeyClass, Long.TYPE, enumGamemodeClass, enumGamemodeClass, Boolean.TYPE, Boolean.TYPE, Boolean.TYPE)
+                            .newInstance(holderAClass.getConstructors()[0].newInstance(dimensionManager), dimensionKey, seedHash, gamemode, gamemode, false/*isDebugWorld*/, isFlatWorld, true/*keepAllPlayerData*/);
+                }
+                else if (MinecraftVersion.VERSION.newerThan(MinecraftVersion.VersionEnum.v1_16_R2)) {
                     Object nmsWorld = player.getWorld().getClass().getDeclaredMethod("getHandle").invoke(player.getWorld());
                     Object dimensionManager = worldClass.getDeclaredMethod(getDimensionManagerMethodName).invoke(nmsWorld);
                     Object dimensionKey = worldClass.getDeclaredMethod(getDimensionKeyMethodName).invoke(nmsWorld);
@@ -271,17 +284,17 @@ public abstract class Reflector {
                         for (Player player1 : Bukkit.getOnlinePlayers()) {
                             if (player1.canSee(player)) {
                                 canSee.add(player1);
-                                player1.hidePlayer(Main.getPlugin(Main.class), player);
+                                player1.hidePlayer(JavaPlugin.getPlugin(Main.class), player);
                             }
                         }
                         for (Player player1 : canSee) {
-                            player1.showPlayer(Main.getPlugin(Main.class), player);
+                            player1.showPlayer(JavaPlugin.getPlugin(Main.class), player);
                         }
                     } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                         e.printStackTrace();
                     }
                 }
-            }.runTaskLater(Main.getPlugin(Main.class), 1L);
+            }.runTaskLater(JavaPlugin.getPlugin(Main.class), 1L);
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
         }

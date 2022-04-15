@@ -60,7 +60,7 @@ public class CommandBlocksCommand implements CommandExecutor {
                     e.printStackTrace();
                 }
             }
-        }.runTaskAsynchronously(Main.getPlugin(Main.class));
+        }.runTaskAsynchronously(Main.getInstance());
 
         new BukkitRunnable() {
             @Override
@@ -75,7 +75,7 @@ public class CommandBlocksCommand implements CommandExecutor {
                     cancel();
                 }
             }
-        }.runTaskTimer(Main.getPlugin(Main.class), 0L, 1L);
+        }.runTaskTimer(Main.getInstance(), 0L, 1L);
     }
 
     private void setCBControls(Menu cbMenu, Player player, List<ItemStack> allCBs) {
@@ -129,7 +129,7 @@ public class CommandBlocksCommand implements CommandExecutor {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
     }

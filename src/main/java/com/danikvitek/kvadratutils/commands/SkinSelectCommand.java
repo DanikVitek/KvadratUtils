@@ -86,7 +86,7 @@ public class SkinSelectCommand implements CommandExecutor {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
         skinMenu.setButton(53, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -116,7 +116,7 @@ public class SkinSelectCommand implements CommandExecutor {
                             Main.getReflector().setSkin(player, title);
 //                            player.sendMessage(ChatColor.YELLOW + "Вам был присвоен скин " + ChatColor.GOLD + title);
                         }
-                    }.runTaskAsynchronously(Main.getPlugin(Main.class));
+                    }.runTaskAsynchronously(Main.getInstance());
                 }
             });
         }
@@ -141,7 +141,7 @@ public class SkinSelectCommand implements CommandExecutor {
                         SkinCommand.resetSkinRelation(player);
                         player.sendMessage(ChatColor.YELLOW + "Ваш скин был сброшен");
                     }
-                }.runTaskAsynchronously(Main.getPlugin(Main.class));
+                }.runTaskAsynchronously(Main.getInstance());
             }
         });
         skinMenu.setButton(50, new Button(getCurrentSkinHead(player)) {
@@ -155,7 +155,7 @@ public class SkinSelectCommand implements CommandExecutor {
 
     private static List<ItemStack> getSkinIcons() {
         return Main.makeExecuteQuery(
-                new QueryBuilder().select(Main.skinsTableName).what("Name, Skin_Value").from().build(),
+                new QueryBuilder().select(Main.SKINS_TABLE_NAME).what("Name, Skin_Value").from().build(),
                 new HashMap<>(),
                 skinsResultSet -> {
                     List<ItemStack> result = new ArrayList<>();

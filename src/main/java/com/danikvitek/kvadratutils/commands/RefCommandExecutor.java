@@ -20,7 +20,7 @@ public class RefCommandExecutor implements TabExecutor {
         if (sender.hasPermission("kvadratutils.command.ref")) {
             if (args.length >= 1) {
                 String commandReference = Main.makeExecuteQuery(
-                        new QueryBuilder().select(Main.refCommandsTableName)
+                        new QueryBuilder().select(Main.REF_COMMANDS_TABLE_NAME)
                                 .what("Command")
                                 .from()
                                 .where("Alias = '" + args[0] + "'")
@@ -52,7 +52,7 @@ public class RefCommandExecutor implements TabExecutor {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (sender.hasPermission("kvadratutils.command.ref")) {
-            return copyPartialInnerMatches(args[0], Objects.requireNonNull(Main.makeExecuteQuery(new QueryBuilder().select(Main.refCommandsTableName)
+            return copyPartialInnerMatches(args[0], Objects.requireNonNull(Main.makeExecuteQuery(new QueryBuilder().select(Main.REF_COMMANDS_TABLE_NAME)
                             .what("Alias").from().build(),
                     new HashMap<>(),
                     aliasesResultSet -> {
@@ -70,7 +70,7 @@ public class RefCommandExecutor implements TabExecutor {
         return null;
     }
 
-    private static List<String> copyPartialInnerMatches(final String lookFor, final Collection<String> lookIn) {
+    private static List<String> copyPartialInnerMatches(final String lookFor, final @NotNull Collection<String> lookIn) {
         return lookIn.stream().filter(s -> s.contains(lookFor)).collect(Collectors.toList());
     }
 }

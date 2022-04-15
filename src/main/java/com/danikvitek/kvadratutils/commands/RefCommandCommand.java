@@ -20,7 +20,7 @@ public class RefCommandCommand implements CommandExecutor {
                 String alias = args[0];
                 String commandReference = Arrays.stream(args).skip(1L).collect(Collectors.joining(" "));
 
-                if (Main.makeExecuteUpdate(new QueryBuilder().insert(Main.refCommandsTableName)
+                if (Main.makeExecuteUpdate(new QueryBuilder().insert(Main.REF_COMMANDS_TABLE_NAME)
                         .setValues("'" + alias + "'", "'" + commandReference + "'")
                         .build(),
                         new HashMap<>()))

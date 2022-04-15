@@ -5,7 +5,9 @@ import com.danikvitek.kvadratutils.utils.ItemBuilder;
 import com.danikvitek.kvadratutils.utils.gui.Button;
 import com.danikvitek.kvadratutils.utils.gui.ControlButtons;
 import com.danikvitek.kvadratutils.utils.gui.Menu;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,7 +20,6 @@ import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
@@ -47,16 +48,16 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
         removeXPOrbsInChunksTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!entity_spawn[23])
-                    for (World world: Bukkit.getWorlds())
-                        for (Chunk chunk: world.getLoadedChunks())
-                            for (Entity entity: chunk.getEntities())
-                                try {
-                                    if (entity instanceof ExperienceOrb)
-                                        entity.remove();
-                                } catch (NoSuchElementException ignored) {}
+                if (!entity_spawn[23]) Bukkit.getWorlds().stream()
+                        .flatMap(world -> Arrays.stream(world.getLoadedChunks()))
+                        .flatMap(chunk -> Arrays.stream(chunk.getEntities()))
+                        .forEach(entity -> {
+                            try {
+                                if (entity instanceof ExperienceOrb) entity.remove();
+                            } catch (NoSuchElementException ignored) { }
+                        });
             }
-        }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 1L);
+        }.runTaskTimerAsynchronously(Main.getInstance(), 0L, 1L);
     }
 
     @Override
@@ -78,7 +79,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
         return true;
     }
 
-    private void redrawMenu(Player player, Menu managerMenu, boolean reload) {
+    private void redrawMenu(@NotNull Player player, Menu managerMenu, boolean reload) {
         setIcons(managerMenu, pages.get(player.getUniqueId()));
         setToggleControls(managerMenu, pages.get(player.getUniqueId()));
         setPageControls(managerMenu, player);
@@ -90,7 +91,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
         }
     }
 
-    private void setPageControls(Menu managerMenu, Player player) {
+    private void setPageControls(@NotNull Menu managerMenu, Player player) {
         managerMenu.setButton(18, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
@@ -98,7 +99,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                 pages.put(
                         player.getUniqueId(),
                         (byte) (pages.get(player.getUniqueId()) == 0
-                                ? (byte) Math.ceil((double) entity_spawn.length / 9d) - 1
+                                ? (byte) Math.ceil(entity_spawn.length / 9d) - 1
                                 : pages.get(player.getUniqueId()) - 1));
                 redrawMenu(player, managerMenu, true);
             }
@@ -107,7 +108,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
                 event.setCancelled(true);
-                pages.put(player.getUniqueId(), (byte) ((pages.get(player.getUniqueId()) + 1) % (int) Math.ceil((double) entity_spawn.length / 9d)));
+                pages.put(player.getUniqueId(), (byte) ((pages.get(player.getUniqueId()) + 1) % (int) Math.ceil(entity_spawn.length / 9d)));
                 redrawMenu(player, managerMenu, true);
             }
         });
@@ -122,7 +123,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
     }
@@ -277,7 +278,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onEntitySpawn(EntitySpawnEvent event) {
+    public void onEntitySpawn(@NotNull EntitySpawnEvent event) {
         Entity entity = event.getEntity();
         if (
             (!entity_spawn[0] && entity instanceof AbstractArrow) ||
@@ -309,7 +310,7 @@ public class EntityManagerCommand implements CommandExecutor, Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onVehicle(VehicleCreateEvent event) {
+    public void onVehicle(@NotNull VehicleCreateEvent event) {
         Vehicle vehicle = event.getVehicle();
         if (
             (!entity_spawn[9]  && vehicle instanceof RideableMinecart) ||

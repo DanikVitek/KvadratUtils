@@ -19,8 +19,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -205,7 +207,7 @@ public class GameRulesCommand implements CommandExecutor {
         return true;
     }
 
-    private static void redrawMenu(Player player, Menu gameRulesMenu, boolean reload) {
+    private static void redrawMenu(@NotNull Player player, Menu gameRulesMenu, boolean reload) {
         List<ItemStack> pageIcons = PageUtil.getPageItems(gameRulesIcons, pages.get(player.getUniqueId()), 9);
         setPageControls(player, gameRulesMenu);
         setGameRulesIcons(player, gameRulesMenu, pageIcons);
@@ -218,7 +220,7 @@ public class GameRulesCommand implements CommandExecutor {
         }
     }
 
-    private static void setPageControls(Player player, Menu gameRulesMenu) {
+    private static void setPageControls(Player player, @NotNull Menu gameRulesMenu) {
         gameRulesMenu.setButton(18, new Button(ControlButtons.ARROW_LEFT.getItemStack()) {
             @Override
             public void onClick(Menu menu, InventoryClickEvent event) {
@@ -227,7 +229,8 @@ public class GameRulesCommand implements CommandExecutor {
                         player.getUniqueId(),
                         (byte) (pages.get(player.getUniqueId()) <= 0
                                 ? PageUtil.getMaxPages(gameRulesIcons, 9) - 1
-                                : pages.get(player.getUniqueId()) - 1));
+                                : pages.get(player.getUniqueId()) - 1)
+                );
                 redrawMenu(player, gameRulesMenu, true);
             }
         });
@@ -237,7 +240,8 @@ public class GameRulesCommand implements CommandExecutor {
                 event.setCancelled(true);
                 pages.put(
                         player.getUniqueId(),
-                        (byte) ((pages.get(player.getUniqueId()) + 1) % PageUtil.getMaxPages(gameRulesIcons, 9)));
+                        (byte) ((pages.get(player.getUniqueId()) + 1) % PageUtil.getMaxPages(gameRulesIcons, 9))
+                );
                 redrawMenu(player, gameRulesMenu, true);
             }
         });
@@ -253,7 +257,7 @@ public class GameRulesCommand implements CommandExecutor {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
     }
@@ -277,25 +281,19 @@ public class GameRulesCommand implements CommandExecutor {
 
     private static void setGameRulesControls(Player player, Menu gameRulesMenu, List<ItemStack> pageIcons) {
         for (int i = 0; i < 9; i++) {
-            GameRule<?> gameRule = i < pageIcons.size() ? GameRule.getByName(ChatColor.stripColor(Objects.requireNonNull(pageIcons.get(i).getItemMeta()).getDisplayName())) : null;
+            GameRule<?> gameRule = i < pageIcons.size()
+                    ? GameRule.getByName(ChatColor.stripColor(Objects.requireNonNull(pageIcons.get(i).getItemMeta()).getDisplayName()))
+                    : null;
             gameRulesMenu.setButton(i + 9, new Button(
-                    i < pageIcons.size()
-                            ? (gameRule != null
-                            ? (gameRule.getType().equals(Boolean.class)
-                            ? ((boolean) player.getWorld().getGameRuleValue(gameRule)
-                            ? new ItemBuilder(Material.LIME_WOOL).setDisplayName(ChatColor.GREEN + "True").build()
-                            : new ItemBuilder(Material.RED_WOOL).setDisplayName(ChatColor.RED + "False").build())
-                            : new ItemBuilder(Material.PAPER).setDisplayName(ChatColor.GOLD + Objects.requireNonNull(player.getWorld().getGameRuleValue(gameRule)).toString()).build())
-                            : null)
-                            : null) {
+                    getGameRuleControls(player, pageIcons, i, gameRule)) {
                 @SuppressWarnings("unchecked cast")
                 @Override
                 public void onClick(Menu menu, InventoryClickEvent event) {
                     event.setCancelled(true);
                     if (gameRule != null) {
                         if (this.getType() != Material.PAPER && gameRule.getType().equals(Boolean.class)) {
-                            boolean value = (boolean) player.getWorld().getGameRuleValue(gameRule);
-                            player.getWorld().setGameRule((GameRule<Boolean>) gameRule, !value);
+                            Boolean value = (Boolean) player.getWorld().getGameRuleValue(gameRule);
+                            player.getWorld().setGameRule((GameRule<Boolean>) gameRule, Boolean.FALSE.equals(value));
                             redrawMenu(player, gameRulesMenu, true);
                         } else {
                             new AnvilGUI.Builder()
@@ -322,7 +320,7 @@ public class GameRulesCommand implements CommandExecutor {
                                                 public void run() {
                                                     redrawMenu(player, gameRulesMenu, false);
                                                 }
-                                            }.runTaskLater(Main.getPlugin(Main.class), 3L);
+                                            }.runTaskLater(Main.getInstance(), 3L);
                                             return AnvilGUI.Response.close();
                                         } else
                                             return AnvilGUI.Response.text("Неверный формат значения!");
@@ -332,13 +330,36 @@ public class GameRulesCommand implements CommandExecutor {
                                         public void run() {
                                             redrawMenu(player, gameRulesMenu, false);
                                         }
-                                    }.runTaskLater(Main.getPlugin(Main.class), 3L))
-                                    .plugin(Main.getPlugin(Main.class))
+                                    }.runTaskLater(Main.getInstance(), 3L))
+                                    .plugin(Main.getInstance())
                                     .open(player);
                         }
                     }
                 }
             });
         }
+    }
+
+    @Nullable
+    private static ItemStack getGameRuleControls(Player player,
+                                                 @NotNull List<ItemStack> pageIcons,
+                                                 int i,
+                                                 GameRule<?> gameRule) {
+        if (i >= pageIcons.size()) return null;
+
+        if (gameRule == null) return null;
+
+        if (!gameRule.getType().equals(Boolean.class))
+            return new ItemBuilder(Material.PAPER)
+                    .setDisplayName(
+                            ChatColor.GOLD + Objects.requireNonNull(
+                                    player.getWorld().getGameRuleValue(gameRule)
+                            ).toString()
+                    )
+                    .build();
+
+        return Boolean.TRUE.equals(player.getWorld().getGameRuleValue(gameRule))
+                ? new ItemBuilder(Material.LIME_WOOL).setDisplayName(ChatColor.GREEN + "True").build()
+                : new ItemBuilder(Material.RED_WOOL).setDisplayName(ChatColor.RED + "False").build();
     }
 }

@@ -60,7 +60,7 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                 e.printStackTrace();
             } catch (ConcurrentModificationException ignored) {}
         }
-    }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 1L);
+    }.runTaskTimerAsynchronously(Main.getInstance(), 0L, 1L);
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -113,7 +113,7 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
         teleportMenu.setButton(35, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {
@@ -198,7 +198,7 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                     public void run() {
                         redrawMenu(player, teleportMenu, true);
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
         teleportMenu.setButton(32, new Button(new ItemBuilder(player.hasPermission("kvadratutils.can_teleport")
@@ -213,7 +213,7 @@ public class TPMenuCommand implements CommandExecutor, Listener {
                     public void run() {
                         redrawMenu(player, teleportMenu, true);
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
     }

@@ -8,20 +8,19 @@ import java.util.HashMap;
 
 public class Menu {
     private final Inventory inventory;
-    private final HashMap<Integer, Button> buttons;
+    private final HashMap<Integer, Button> buttons = new HashMap<>();
 
     public Menu(Inventory inventory) {
         this.inventory = inventory;
-        buttons = new HashMap<>();
     }
 
     public void setButton(int slot, Button button) {
         buttons.put(slot, button);
     }
 
-    public void performClick(Menu menu, InventoryClickEvent event) {
+    public void performClick(InventoryClickEvent event) {
         if (buttons.get(event.getSlot()) != null)
-            buttons.get(event.getSlot()).onClick(menu, event);
+            buttons.get(event.getSlot()).onClick(this, event);
     }
 
     protected void loadButtons() {

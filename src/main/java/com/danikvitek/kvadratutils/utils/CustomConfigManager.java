@@ -24,11 +24,14 @@ public class CustomConfigManager {
 
     public void reloadCustomConfig() {
         if (customConfigFile == null)
-            customConfigFile = new File(Main.getPlugin(Main.class).getDataFolder(), fileName);
+            customConfigFile = new File(Main.getInstance().getDataFolder(), fileName);
         modifyCustomConfigFile = YamlConfiguration.loadConfiguration(customConfigFile);
 
         // Look for defaults in the jar
-        Reader defConfigStream = new InputStreamReader(Objects.requireNonNull(Main.getPlugin(Main.class).getResource(fileName)), StandardCharsets.UTF_8);
+        Reader defConfigStream = new InputStreamReader(
+                Objects.requireNonNull(Main.getInstance().getResource(fileName)),
+                StandardCharsets.UTF_8
+        );
         YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
         modifyCustomConfigFile.setDefaults(defConfig);
     }
@@ -53,10 +56,10 @@ public class CustomConfigManager {
 
     public void saveDefaultConfig() {
         if (customConfigFile == null) {
-            customConfigFile = new File(Main.getPlugin(Main.class).getDataFolder(), fileName);
+            customConfigFile = new File(Main.getInstance().getDataFolder(), fileName);
         }
         if (!customConfigFile.exists()) {
-            Main.getPlugin(Main.class).saveResource(fileName, false);
+            Main.getInstance().saveResource(fileName, false);
         }
     }
 

@@ -12,7 +12,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.CommandBlock;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockMultiPlaceEvent;
@@ -40,7 +39,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
             if (System.currentTimeMillis() >= timestamp)
                 timestamp = System.currentTimeMillis() + period;
         }
-    }.runTaskTimerAsynchronously(Main.getPlugin(Main.class), 0L, 0L);
+    }.runTaskTimerAsynchronously(Main.getInstance(), 0L, 0L);
 
     @EventHandler
     public void onCBPlace(BlockPlaceEvent event) {
@@ -63,7 +62,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
             HashMap<Integer, byte[]> values = new HashMap<>();
             values.put(1, worldUUID);
             Integer worldID = Main.makeExecuteQuery(
-                    new QueryBuilder().select(Main.worldsTableName).what("ID").from().where("UUID = ?").build(),
+                    new QueryBuilder().select(Main.WORLDS_TABLE_NAME).what("ID").from().where("UUID = ?").build(),
                     values,
                     worldsResultSet -> {
                         try {
@@ -77,7 +76,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                     }
             );
             if (worldID != null)
-                Main.makeExecuteUpdate("DELETE FROM " + Main.cbTableName + " WHERE World_ID = '" + worldID + "' AND Location = '" + location + "';", new HashMap<>());
+                Main.makeExecuteUpdate("DELETE FROM " + Main.CB_TABLE_NAME + " WHERE World_ID = '" + worldID + "' AND Location = '" + location + "';", new HashMap<>());
         }
     }
 
@@ -99,7 +98,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
             if (System.currentTimeMillis() + (period - periodGap) < timestamp) {
                 AtomicBoolean isSaved = new AtomicBoolean(false);
                 Main.makeExecuteQuery(
-                        new QueryBuilder().select(Main.cbTableName).what("*").from().build(), new HashMap<>(),
+                        new QueryBuilder().select(Main.CB_TABLE_NAME).what("*").from().build(), new HashMap<>(),
                         rs -> {
                             if (rs != null) {
                                 int worldID;
@@ -141,7 +140,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                 HashMap<Integer, byte[]> values = new HashMap<>();
                 values.put(1, Converter.uuidToBytes(UUID.fromString(worldUUID)));
                 Main.makeExecuteQuery(
-                        new QueryBuilder().select(Main.worldsTableName) // Select ID of world where world's UUID == value
+                        new QueryBuilder().select(Main.WORLDS_TABLE_NAME) // Select ID of world where world's UUID == value
                                 .what("ID")
                                 .from()
                                 .where("UUID = ?")
@@ -150,7 +149,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                             if (worldResultSet != null) { // worldResultSet - ID of resulting world
                                 try {
                                     worldResultSet.next();
-                                    Main.makeExecuteQuery(new QueryBuilder().select(Main.cbTableName) // select CommandBlock where World_ID = value1 and Location = value2
+                                    Main.makeExecuteQuery(new QueryBuilder().select(Main.CB_TABLE_NAME) // select CommandBlock where World_ID = value1 and Location = value2
                                                     .what("*")
                                                     .from()
                                                     .where("World_ID = '" + worldResultSet.getInt(1) + "' AND Location = '" + location + "'")
@@ -159,7 +158,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                                             cbResultSet -> {
                                                 try {
                                                     if (!cbResultSet.next()) {
-                                                        Main.makeExecuteUpdate(new QueryBuilder().insert(Main.cbTableName) // insert cb in table with world_id and location
+                                                        Main.makeExecuteUpdate(new QueryBuilder().insert(Main.CB_TABLE_NAME) // insert cb in table with world_id and location
                                                                 .setColumns("World_ID", "Location")
                                                                 .setValues("'" + worldResultSet.getInt(1) + "'", "'" + location + "'")
                                                                 .onDuplicateKeyUpdate()
@@ -180,7 +179,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                             return false;
                         });
             }
-        }.runTaskAsynchronously(Main.getPlugin(Main.class));
+        }.runTaskAsynchronously(Main.getInstance());
     }
 
     /**
@@ -192,7 +191,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
      */
     public static @Nullable Block loadCommandBlock(int worldID, long location) throws IllegalArgumentException {
         return Main.makeExecuteQuery(
-                new QueryBuilder().select(Main.cbTableName)
+                new QueryBuilder().select(Main.CB_TABLE_NAME)
                         .what("World_ID, Location")
                         .from()
                         .where("World_ID = '" + worldID + "' AND Location = '" + location + "'")
@@ -202,7 +201,7 @@ public class CommandBlockLogger implements Listener { // TODO: log command minec
                         try {
                             if (cbResultSet.next()) {
                                 return Main.makeExecuteQuery(
-                                        new QueryBuilder().select(Main.worldsTableName)
+                                        new QueryBuilder().select(Main.WORLDS_TABLE_NAME)
                                                 .what("UUID")
                                                 .from()
                                                 .where("ID = '" + cbResultSet.getInt(1) + "'")

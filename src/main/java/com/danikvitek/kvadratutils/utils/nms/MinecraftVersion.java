@@ -2,6 +2,8 @@ package com.danikvitek.kvadratutils.utils.nms;
 
 import com.danikvitek.kvadratutils.Main;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -45,7 +47,8 @@ public class MinecraftVersion {
         v1_16_R3(11603),
 
         v1_17_R1(11701),
-        v1_18_R1(11801);
+        v1_18_R1(11801),
+        v1_18_R2(11802);
 
         private final int index;
 
@@ -53,16 +56,14 @@ public class MinecraftVersion {
             this.index = index;
         }
 
-        public boolean newerThan(VersionEnum other) {
+        @Contract(pure = true)
+        public boolean newerThan(@NotNull VersionEnum other) {
             return other.index < this.index;
         }
 
-        public boolean olderThan(VersionEnum other) {
+        @Contract(pure = true)
+        public boolean olderThan(@NotNull VersionEnum other) {
             return other.index > this.index;
-        }
-
-        public boolean equals(VersionEnum other) {
-            return other.index == this.index;
         }
     }
 }

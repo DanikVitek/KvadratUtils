@@ -148,7 +148,8 @@ public class ManagePermissionsCommand implements CommandExecutor {
                                 event.setCancelled(true);
                                 if (_i - 9 < permissions.size()) {
                                     PermissionNode permissionNode = PermissionNode.builder(permissions.get(_i - 9)).value(!subjectPlayer.hasPermission(permissions.get(_i - 9))).build();
-                                    Main.getLuckPermsAPI().getUserManager().modifyUser(subjectPlayer.getUniqueId(),
+                                    Main.getLuckPermsAPI().getUserManager().modifyUser(
+                                            subjectPlayer.getUniqueId(),
                                             u -> u.data().add(permissionNode)
                                     );
                                     new BukkitRunnable() {
@@ -156,7 +157,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                                         public void run() {
                                             redrawMenu(permissionsMenu, true);
                                         }
-                                    }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                                    }.runTaskLater(Main.getInstance(), 2L);
                                 } else
                                     redrawMenu(permissionsMenu, true);
                             }
@@ -184,7 +185,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                                 public void run() {
                                     redrawMenu(permissionsMenu, true);
                                 }
-                            }.runTaskLater(Main.getPlugin(Main.class), 5L);
+                            }.runTaskLater(Main.getInstance(), 5L);
                         }
                     });
                     permissionsMenu.setButton(23, new Button(new ItemBuilder(Material.LIME_STAINED_GLASS_PANE).setDisplayName(ChatColor.GREEN + "Разрешить всё").build()) {
@@ -208,7 +209,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                                 public void run() {
                                     redrawMenu(permissionsMenu, true);
                                 }
-                            }.runTaskLater(Main.getPlugin(Main.class), 5L);
+                            }.runTaskLater(Main.getInstance(), 5L);
                         }
                     });
                 }
@@ -276,7 +277,7 @@ public class ManagePermissionsCommand implements CommandExecutor {
                     public void run() {
                         player.performCommand("menus");
                     }
-                }.runTaskLater(Main.getPlugin(Main.class), 2L);
+                }.runTaskLater(Main.getInstance(), 2L);
             }
         });
         managerMenu.setButton(53, new Button(ControlButtons.ARROW_RIGHT.getItemStack()) {

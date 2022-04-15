@@ -8,6 +8,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +17,7 @@ public class MenuHandler {
 
     private final ConcurrentHashMap<UUID, Menu> openMenus = new ConcurrentHashMap<>();
 
-    public void openMenu(Player player, Menu menu) {
+    public void openMenu(@NotNull Player player, Menu menu) {
         openMenus.put(player.getUniqueId(), menu);
         menu.open(player);
     }
@@ -28,7 +29,7 @@ public class MenuHandler {
         player.closeInventory();
     }
 
-    public void reloadMenu(Player player) {
+    public void reloadMenu(@NotNull Player player) {
         if (openMenus.get(player.getUniqueId()) != null)
             openMenus.get(player.getUniqueId()).loadButtons();
         else openMenus.remove(player.getUniqueId());
@@ -41,7 +42,7 @@ public class MenuHandler {
         return false;
     }
 
-    public Menu getMenu(Player player) {
+    public Menu getMenu(@NotNull Player player) {
         return openMenus.get(player.getUniqueId());
     }
 
@@ -52,6 +53,7 @@ public class MenuHandler {
             assert player != null;
             player.closeInventory();
         }
+        openMenus.clear();
     }
 
     public Listener getListeners() {
@@ -66,7 +68,7 @@ public class MenuHandler {
 
                 Menu menu = openMenus.get(player.getUniqueId());
                 if (e.getClickedInventory().equals(e.getView().getTopInventory()))
-                    menu.performClick(menu, e);
+                    menu.performClick(e);
             }
 
             @EventHandler
